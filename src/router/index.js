@@ -43,6 +43,9 @@ export default class Router {
     let urlArray = hash.split("/");
     let urlParent = "#";
     let routeUrlArray = [];
+    if (hash == "#/" || hash == "") {
+      routeUrlArray.push("/");
+    }
     for (let i = 1; i < urlArray.length; i++) {
       let currentUrl = urlParent + "/" + urlArray[i];
       routeUrlArray.push(currentUrl);
@@ -55,7 +58,10 @@ export default class Router {
       let sameLevelCount = 0;
       for (let j = 0; j < routeCount; j++) {
         let currentRoute = this.#option.routes[j];
-        if (currentRoute.path.toLowerCase() == currentUrl) {
+        if (
+          currentRoute.path.toLowerCase() == currentUrl ||
+          (currentUrl == "/" && currentRoute.default)
+        ) {
           sameLevelCount++;
           currentRoute.__instanceVClass = null;
           this.currentRouteList.push(currentRoute);
