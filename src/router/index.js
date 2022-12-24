@@ -93,7 +93,7 @@ export default class Router {
         if (renderVersion == this.#renderVersion) {
           let viewClass = component.default ? component.default : component;
           route.__instanceVClass = new VClass(viewClass);
-          route.__instanceVClass.init(route.containerId);
+          route.__instanceVClass.init(route.containerId, 0);
           y();
         }
       });

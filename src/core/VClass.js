@@ -25,15 +25,15 @@ export default class VClass {
     this.tagName = "custom:" + className.name;
     this.className = className;
     this.option = option;
-    if(option){
+    if (option) {
       this.key = option.key;
-    }    
+    }
   }
 
-  async init(containerId) {
+  async init(containerId, parentIndex) {
     if (this.classState == VClassState.none) {
       this.instance = new this.className(this.option);
-      await this.instance.__render(containerId);
+      await this.instance.__render(containerId, parentIndex);
       this.#disposalData();
       this.classState = VClassState.init;
       return this.instance;
@@ -41,16 +41,16 @@ export default class VClass {
     return null;
   }
 
-  async update() {
+  async update(parentIndex) {
     if (this.classState == VClassState.init) {
-      await this.instance.__refresh();
+      await this.instance.__refresh(parentIndex);
       this.#disposalData();
       return this.instance;
     }
     return null;
   }
 
-  #disposalData(){
+  #disposalData() {
     // if (this.option && this.option.ref) {
     //   this.option.ref(this.instance);
     // }

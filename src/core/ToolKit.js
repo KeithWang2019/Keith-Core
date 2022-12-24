@@ -59,4 +59,8 @@ export default class ToolKit {
     }
     return des;
   }
+
+  static safeDraw(){
+    
+  }
 }

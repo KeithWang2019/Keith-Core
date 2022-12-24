@@ -57,7 +57,7 @@ export default class VNode {
     this.childNodes.push(childVNode);
   }
 
-  async draw() {
+  async draw(parentIndex) {
     switch (this.tagName) {
       case "#text":
         if (this.nextNodeState == VNodeState.insert) {
@@ -96,9 +96,9 @@ export default class VNode {
               let instance = null;
 
               if (childNode.classState == VClassState.none) {
-                instance = await childNode.init(this.el);
+                instance = await childNode.init(this.el, parentIndex + "-" + i);
               } else {
-                instance = await childNode.update();
+                instance = await childNode.update(parentIndex + "-" + i);
               }
               if (childNode.option && childNode.option.ref) {
                 if (!tempRefMapArray[childNode.option.ref]) {
@@ -120,13 +120,15 @@ export default class VNode {
               }
             } else {
               if (childNode.nextIndex != childNode.currentIndex) {
-                let childEl = await childNode.draw();
+                let childEl = await childNode.draw(parentIndex + "-" + i);
                 this.el.appendChild(childEl);
               } else {
                 if (this.nextNodeState == VNodeState.insert) {
-                  this.el.appendChild(await childNode.draw());
+                  this.el.appendChild(
+                    await childNode.draw(parentIndex + "-" + i)
+                  );
                 } else {
-                  await childNode.draw();
+                  await childNode.draw(parentIndex + "-" + i);
                 }
               }
               if (childNode.ref) {
@@ -163,8 +165,14 @@ export default class VNode {
   }
 
   diff(newNode) {
-    if (!this.childNodes || !newNode.childNodes) {
-      return [];
+    // if (!this.childNodes && !newNode.childNodes) {
+    //   return [];
+    // }
+    if (this.childNodes == null) {
+      this.childNodes = [];
+    }
+    if (newNode.childNodes == null) {
+      newNode.childNodes = [];
     }
     let tempMapChildNodes = {};
     let tempWillChildNodes = [];
@@ -203,7 +211,7 @@ export default class VNode {
 
           try {
             if (childNode instanceof VClass) {
-              childNode.update();
+              // childNode.update();
             } else {
               childNode.diff(vnode2ChildNode);
             }
