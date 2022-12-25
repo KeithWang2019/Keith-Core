@@ -1,3 +1,4 @@
+import ToolKit from "./ToolKit";
 import VClassState from "./VClassState";
 import VNodeState from "./VNodeState";
 
@@ -22,7 +23,7 @@ export default class VClass {
   classState = VClassState.none;
 
   constructor(className, option) {
-    this.tagName = "custom:" + className.name;
+    this.tagName = "view:" + className.name;
     this.className = className;
     this.option = option;
     if (option) {
@@ -30,10 +31,14 @@ export default class VClass {
     }
   }
 
-  async init(containerId, parentIndex) {
+  async init(containerId, parentView) {
     if (this.classState == VClassState.none) {
       this.instance = new this.className(this.option);
-      await this.instance.__render(containerId, parentIndex);
+      this.instance.__name = this.tagName;
+      if (parentView.indexOf(">" + this.tagName) >= 0) {
+        throw this.tagName + "代码中存在循环嵌套";
+      }
+      await this.instance.__render(containerId, parentView);
       this.#disposalData();
       this.classState = VClassState.init;
       return this.instance;
@@ -41,9 +46,9 @@ export default class VClass {
     return null;
   }
 
-  async update(parentIndex) {
+  async update(parentView) {
     if (this.classState == VClassState.init) {
-      await this.instance.__refresh(parentIndex);
+      await this.instance.__refresh(parentView);
       this.#disposalData();
       return this.instance;
     }

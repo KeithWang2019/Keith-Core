@@ -1,3 +1,4 @@
+import ToolKit from "../core/ToolKit";
 import VClass from "../core/VClass";
 
 export default class Router {
@@ -92,8 +93,8 @@ export default class Router {
       route.component().then(async (component) => {
         if (renderVersion == this.#renderVersion) {
           let viewClass = component.default ? component.default : component;
-          route.__instanceVClass = new VClass(viewClass);
-          route.__instanceVClass.init(route.containerId, 0);
+          route.__instanceVClass = new VClass(viewClass);          
+          await route.__instanceVClass.init(route.containerId, "");
           y();
         }
       });

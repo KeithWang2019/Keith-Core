@@ -57,7 +57,7 @@ export default class VNode {
     this.childNodes.push(childVNode);
   }
 
-  async draw(parentIndex) {
+  async draw(parentView) {
     switch (this.tagName) {
       case "#text":
         if (this.nextNodeState == VNodeState.insert) {
@@ -96,9 +96,9 @@ export default class VNode {
               let instance = null;
 
               if (childNode.classState == VClassState.none) {
-                instance = await childNode.init(this.el, parentIndex + "-" + i);
+                instance = await childNode.init(this.el, parentView);
               } else {
-                instance = await childNode.update(parentIndex + "-" + i);
+                instance = await childNode.update(parentView);
               }
               if (childNode.option && childNode.option.ref) {
                 if (!tempRefMapArray[childNode.option.ref]) {
@@ -120,15 +120,15 @@ export default class VNode {
               }
             } else {
               if (childNode.nextIndex != childNode.currentIndex) {
-                let childEl = await childNode.draw(parentIndex + "-" + i);
+                let childEl = await childNode.draw(parentView);
                 this.el.appendChild(childEl);
               } else {
                 if (this.nextNodeState == VNodeState.insert) {
                   this.el.appendChild(
-                    await childNode.draw(parentIndex + "-" + i)
+                    await childNode.draw(parentView)
                   );
                 } else {
-                  await childNode.draw(parentIndex + "-" + i);
+                  await childNode.draw(parentView);
                 }
               }
               if (childNode.ref) {
@@ -164,7 +164,7 @@ export default class VNode {
     return this.el;
   }
 
-  diff(newNode) {
+  async diff(newNode) {
     // if (!this.childNodes && !newNode.childNodes) {
     //   return [];
     // }

@@ -1,3 +1,4 @@
+import ToolKit from "./ToolKit";
 import VNodeState from "./VNodeState";
 
 export default class View {
@@ -5,6 +6,7 @@ export default class View {
   $key = null;
   __vnode = null;
   __events = null;
+  __name = null;
 
   constructor(option) {
     if (option) {
@@ -13,13 +15,17 @@ export default class View {
     }
   }
 
-  async __render(containerId, parentIndex) {
+  async __render(containerId, parentView) {
     let vnode = await this.render();
 
+    console.log(parentView + ">" + this.__name);
+
     if (typeof containerId == "string") {
-      document.getElementById(containerId).appendChild(await vnode.draw(parentIndex));
+      document
+        .getElementById(containerId)
+        .appendChild(await vnode.draw(parentView + ">" + this.__name));
     } else {
-      containerId.appendChild(await vnode.draw(parentIndex));
+      containerId.appendChild(await vnode.draw(parentView + ">" + this.__name));
     }
     // 渲染完成前已被释放
     if (this.#disposed) {
@@ -30,11 +36,13 @@ export default class View {
     return vnode;
   }
 
-  async __refresh(parentIndex) {
+  async __refresh(parentView) {
     let willVNode = await this.render();
-    this.__vnode.diff(willVNode);
+    await this.__vnode.diff(willVNode);
     this.__vnode.nextNodeState = VNodeState.update;
-    this.__vnode.draw(parentIndex);
+    console.log(parentView + ">" + this.__name);
+    
+    await this.__vnode.draw(parentView + ">" + this.__name);
   }
 
   $emit(eventName, val) {
@@ -43,8 +51,8 @@ export default class View {
     }
   }
 
-  update() {
-    this.__refresh(0);
+  async update() {
+    await this.__refresh("");
   }
 
   __dispose() {
