@@ -41,7 +41,7 @@ export default class View {
     await this.__vnode.diff(willVNode);
     this.__vnode.nextNodeState = VNodeState.update;
     console.log(parentView + ">" + this.__name);
-    
+
     await this.__vnode.draw(parentView + ">" + this.__name);
   }
 
@@ -53,6 +53,10 @@ export default class View {
 
   async update() {
     await this.__refresh("");
+  }
+
+  getJson() {
+    throw `${this.__name}未定义getJson方法`;
   }
 
   __dispose() {

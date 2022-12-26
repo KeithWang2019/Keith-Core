@@ -55,10 +55,6 @@ export default class VNode {
   }
 
   setStyle(style) {
-    // if(typeof style==="string"){
-    //   this.style = style;
-    // }
-    // this.style[styleName] = styleValue;
     this.style = style;
   }
 
@@ -88,7 +84,17 @@ export default class VNode {
         }
         if (this.attributes) {
           Object.keys(this.attributes).forEach((key) => {
-            this.el.setAttribute(key, this.attributes[key]);
+            let val = this.attributes[key];
+            switch (key) {
+              case "value":
+                if (val === null) {
+                  val = "";
+                }
+                break;
+              default:
+                break;
+            }
+            this.el.setAttribute(key, val);
           });
         }
         if (this.className) {
@@ -186,9 +192,6 @@ export default class VNode {
   }
 
   async diff(newNode) {
-    // if (!this.childNodes && !newNode.childNodes) {
-    //   return [];
-    // }
     if (this.childNodes == null) {
       this.childNodes = [];
     }
