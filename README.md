@@ -5,7 +5,7 @@
 # [Keith-Core](https://github.com/KeithWang2019/Keith-Core)
 
 ## 什么是Keith-Core
-Keith-Core是一套类似React的程序，通过[Keith-Babel-JSX](https://github.com/KeithWang2019/Keith-Babel-JSX)对JSX转译成对应的[Keith-Core](https://github.com/KeithWang2019/Keith-Core)虚拟对象，[Keith-Core](https://github.com/KeithWang2019/Keith-Core)负责渲染。
+Keith-Core是一套类似React的程序，通过[Keith-Babel-JSX](https://github.com/KeithWang2019/Keith-Babel-JSX)对JSX转译成对应的[Keith-Core](https://github.com/KeithWang2019/Keith-Core)虚拟对象，[Keith-Core](https://github.com/KeithWang2019/Keith-Core)负责渲染。【避免太多概念】
 
 ## 安装方式
 ```shell
