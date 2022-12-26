@@ -9,6 +9,7 @@ export default class VNode {
   childNodes = null;
   attributes = null;
   eventListeners = null;
+  className = null;
   style = null;
   value = null;
   key = null;
@@ -39,11 +40,26 @@ export default class VNode {
     this.attributes[attrName] = attrValue;
   }
 
-  setStyle(styleName, styleValue) {
-    if (this.style == null) {
-      this.style = {};
+  setClass(className) {
+    if (typeof className === "string") {
+      this.className = className;
+    } else {
+      let classNameString = "";
+      Object.keys(className).forEach((name) => {
+        if (className[name]) {
+          classNameString += name + " ";
+        }
+      });
+      this.className = classNameString.trimEnd();
     }
-    this.style[styleName] = styleValue;
+  }
+
+  setStyle(style) {
+    // if(typeof style==="string"){
+    //   this.style = style;
+    // }
+    // this.style[styleName] = styleValue;
+    this.style = style;
   }
 
   setRef(ref) {
@@ -75,10 +91,17 @@ export default class VNode {
             this.el.setAttribute(key, this.attributes[key]);
           });
         }
+        if (this.className) {
+          this.el.className = this.className;
+        }
         if (this.style) {
-          Object.keys(this.style).forEach((key) => {
-            this.el.style[key] = this.style[key];
-          });
+          if (typeof this.style === "string") {
+            this.el.setAttribute("style", this.style);
+          } else {
+            Object.keys(this.style).forEach((key) => {
+              this.el.style[key] = this.style[key];
+            });
+          }
         }
         if (this.eventListeners) {
           Object.keys(this.eventListeners).forEach((key) => {
@@ -124,9 +147,7 @@ export default class VNode {
                 this.el.appendChild(childEl);
               } else {
                 if (this.nextNodeState == VNodeState.insert) {
-                  this.el.appendChild(
-                    await childNode.draw(parentView)
-                  );
+                  this.el.appendChild(await childNode.draw(parentView));
                 } else {
                   await childNode.draw(parentView);
                 }
@@ -284,6 +305,7 @@ export default class VNode {
     this.childNodes = null;
     this.attributes = null;
     this.eventListeners = null;
+    this.className = null;
     this.style = null;
     this.value = null;
     this.key = null;
