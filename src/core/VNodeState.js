@@ -1,6 +1,6 @@
 export default class VNodeState {
   /**
-   * 插入
+   * 无变化
    */
   static none = "none";
 

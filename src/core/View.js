@@ -9,6 +9,10 @@ export default class View {
   __name = null;
 
   constructor(option) {
+    this.setOption(option);
+  }
+
+  setOption(option) {
     if (option) {
       this.__events = option.events;
       this.$key = option.key;

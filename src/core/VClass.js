@@ -4,13 +4,21 @@ import VNodeState from "./VNodeState";
 
 export default class VClass {
   tagName = null;
-  className = null;
+  viewClass = null;
   option = null;
   instance = null;
 
-  key = null;
+  // 使用option的key
+  // key = null;
   currentIndex = null;
   nextIndex = null;
+
+  getKey() {
+    if (this.option) {
+      return this.option.key;
+    }
+    return null;
+  }
 
   /**
    * 绘画状态
@@ -22,18 +30,19 @@ export default class VClass {
    */
   classState = VClassState.none;
 
-  constructor(className, option) {
-    this.tagName = "view:" + className.name;
-    this.className = className;
+  constructor(viewClass, option) {
+    this.tagName = "view:" + viewClass.name;
+    this.viewClass = viewClass;
     this.option = option;
-    if (option) {
-      this.key = option.key;
-    }
+  }
+
+  setOption(option) {
+    this.option = option;
   }
 
   async init(containerId, parentView) {
     if (this.classState == VClassState.none) {
-      this.instance = new this.className(this.option);
+      this.instance = new this.viewClass(this.option);
       this.instance.__name = this.tagName;
       if (parentView.indexOf(">" + this.tagName) >= 0) {
         throw this.tagName + "代码中存在循环嵌套";
@@ -48,6 +57,7 @@ export default class VClass {
 
   async update(parentView) {
     if (this.classState == VClassState.init) {
+      this.instance.setOption(this.option);
       await this.instance.__refresh(parentView);
       this.#disposalData();
       return this.instance;
@@ -66,7 +76,7 @@ export default class VClass {
       this.instance.__dispose();
       this.instance = null;
 
-      this.className = null;
+      this.viewClass = null;
       this.instance = null;
       this.option = null;
 

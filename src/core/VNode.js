@@ -1,3 +1,4 @@
+import ToolKit from "./ToolKit";
 import VClass from "./VClass";
 import VClassState from "./VClassState";
 import VNodeState from "./VNodeState";
@@ -16,6 +17,10 @@ export default class VNode {
   ref = null;
   currentIndex = null;
   nextIndex = null;
+
+  getKey() {
+    return this.key;
+  }
 
   /**
    * 绘画状态
@@ -118,8 +123,12 @@ export default class VNode {
           let tempRefMapArray = {};
           let tempRefMapFunction = {};
 
-          for (let i = 0; i < this.childNodes.length; i++) {
-            let childNode = this.childNodes[i];
+          for (
+            let nodeIndex = 0;
+            nodeIndex < this.childNodes.length;
+            nodeIndex++
+          ) {
+            let childNode = this.childNodes[nodeIndex];
 
             if (childNode instanceof VClass) {
               let instance = null;
@@ -202,42 +211,62 @@ export default class VNode {
     let tempWillChildNodes = [];
 
     // 制作临时Map对象，用于节点排除
-    for (let i = 0; i < this.childNodes.length; i++) {
-      tempMapChildNodes[i] = this.childNodes[i];
-      tempMapChildNodes[i].currentIndex = i;
+    for (let nodeIndex = 0; nodeIndex < this.childNodes.length; nodeIndex++) {
+      tempMapChildNodes[nodeIndex] = this.childNodes[nodeIndex];
+      tempMapChildNodes[nodeIndex].currentIndex = nodeIndex;
     }
 
-    for (let i = 0; i < newNode.childNodes.length; i++) {
-      let vnode2ChildNode = newNode.childNodes[i];
+    for (
+      let newNodeIndex = 0;
+      newNodeIndex < newNode.childNodes.length;
+      newNodeIndex++
+    ) {
+      let newNodeChildNode = newNode.childNodes[newNodeIndex];
       let found = false;
 
       let tempMapChildNodesKeyArray = Object.keys(tempMapChildNodes);
       for (let j = 0; j < tempMapChildNodesKeyArray.length; j++) {
-        let nodeIndex = tempMapChildNodesKeyArray[j];
-        let childNode = tempMapChildNodes[nodeIndex];
+        let nodeKey = tempMapChildNodesKeyArray[j];
+        let childNode = tempMapChildNodes[nodeKey];
 
         if (
-          vnode2ChildNode.key == childNode.key &&
-          vnode2ChildNode.tagName == childNode.tagName
+          newNodeChildNode.getKey() == childNode.getKey() &&
+          newNodeChildNode.tagName == childNode.tagName
         ) {
-          childNode.nextIndex = i;
-          childNode.nextNodeState = VNodeState.update;
-
           switch (childNode.tagName) {
             case "#text":
-              childNode.value = vnode2ChildNode.value;
+              childNode.value = newNodeChildNode.value;
               break;
           }
 
+          // =================================================
+          // 先删除
           tempWillChildNodes.push(childNode);
-          delete tempMapChildNodes[nodeIndex];
+          delete tempMapChildNodes[nodeKey];
           found = true;
+          // =================================================
 
           try {
             if (childNode instanceof VClass) {
-              // childNode.update();
+              // childNode.nextIndex = newNodeIndex;
+              // childNode.nextNodeState = VNodeState.update;
+              // if (this.classState == VClassState.none) {
+              //   childNode.nextNodeState = VNodeState.insert;
+              // } else {
+              //   if (childNode.currentIndex != newNodeIndex) {
+              //     childNode.nextNodeState = VNodeState.update;
+              //   } else if (
+              //     !ToolKit.deepEqual(childNode.option, newNodeChildNode.option)
+              //   ) {
+              //     // childNode.attributes = newNodeChildNode.attributes;
+              //     childNode.setOption(newNodeChildNode.option);
+              //     childNode.nextNodeState = VNodeState.update;
+              //   }
+              // }
             } else {
-              childNode.diff(vnode2ChildNode);
+              childNode.nextIndex = newNodeIndex;
+              childNode.nextNodeState = VNodeState.update;
+              childNode.diff(newNodeChildNode);
             }
           } catch (e) {
             debugger;
@@ -248,9 +277,9 @@ export default class VNode {
       }
 
       if (!found) {
-        vnode2ChildNode.nextIndex = i;
-        vnode2ChildNode.nextNodeState = VNodeState.insert;
-        tempWillChildNodes.push(vnode2ChildNode);
+        newNodeChildNode.nextIndex = newNodeIndex;
+        newNodeChildNode.nextNodeState = VNodeState.insert;
+        tempWillChildNodes.push(newNodeChildNode);
       }
     }
 
