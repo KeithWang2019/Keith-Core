@@ -19,11 +19,17 @@ export default class View {
     }
   }
 
+  /**
+   * 首次渲染
+   * @param {*} containerId
+   * @param {*} parentView
+   * @returns
+   */
   async __render(containerId, parentView) {
+    await this.onPreRender();
+
     let vnode = await this.render();
-
     console.log(parentView + ">" + this.__name);
-
     if (typeof containerId == "string") {
       document
         .getElementById(containerId)
@@ -40,7 +46,13 @@ export default class View {
     return vnode;
   }
 
+  /**
+   * 刷新渲染
+   * @param {*} parentView
+   */
   async __refresh(parentView) {
+    await this.onPreRender();
+
     let willVNode = await this.render();
     await this.__vnode.diff(willVNode);
     this.__vnode.nextNodeState = VNodeState.update;
@@ -58,6 +70,11 @@ export default class View {
   async update() {
     await this.__refresh("");
   }
+
+  /**
+   * 渲染之前
+   */
+  async onPreRender() {}
 
   getJson() {
     throw `${this.__name}未定义getJson方法`;

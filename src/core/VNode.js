@@ -75,6 +75,10 @@ export default class VNode {
   }
 
   async draw(parentView) {
+    // if (this.nextNodeState == VNodeState.none) {
+    //   return this.el;
+    // }
+
     switch (this.tagName) {
       case "#text":
         if (this.nextNodeState == VNodeState.insert) {
@@ -130,21 +134,27 @@ export default class VNode {
           ) {
             let childNode = this.childNodes[nodeIndex];
 
+            // if (childNode.nextNodeState == VNodeState.remove) {
+            //   childNode.dispose(true);
+            // } else {
             if (childNode instanceof VClass) {
               let instance = null;
 
-              if (childNode.classState == VClassState.none) {
-                instance = await childNode.init(this.el, parentView);
+              if (childNode.nextNodeState == VNodeState.none) {
               } else {
-                instance = await childNode.update(parentView);
-              }
-              if (childNode.option && childNode.option.ref) {
-                if (!tempRefMapArray[childNode.option.ref]) {
-                  tempRefMapArray[childNode.option.ref] = [instance];
-                  tempRefMapFunction[childNode.option.ref] =
-                    childNode.option.ref;
+                if (childNode.classState == VClassState.none) {
+                  instance = await childNode.init(this.el, parentView);
                 } else {
-                  tempRefMapArray[childNode.option.ref].push(instance);
+                  instance = await childNode.update(parentView);
+                }
+                if (childNode.option && childNode.option.ref) {
+                  if (!tempRefMapArray[childNode.option.ref]) {
+                    tempRefMapArray[childNode.option.ref] = [instance];
+                    tempRefMapFunction[childNode.option.ref] =
+                      childNode.option.ref;
+                  } else {
+                    tempRefMapArray[childNode.option.ref].push(instance);
+                  }
                 }
               }
               if (childNode.currentIndex != childNode.nextIndex) {
@@ -185,6 +195,7 @@ export default class VNode {
                 );
               }
             }
+            // }
           }
 
           Object.keys(tempRefMapArray).forEach((key) => {
@@ -208,12 +219,13 @@ export default class VNode {
       newNode.childNodes = [];
     }
     let tempMapChildNodes = {};
+    let tempOldChildNodesForIndexWithOutDelNode = [];
     let tempWillChildNodes = [];
 
     // 制作临时Map对象，用于节点排除
     for (let nodeIndex = 0; nodeIndex < this.childNodes.length; nodeIndex++) {
       tempMapChildNodes[nodeIndex] = this.childNodes[nodeIndex];
-      tempMapChildNodes[nodeIndex].currentIndex = nodeIndex;
+      tempOldChildNodesForIndexWithOutDelNode.push(this.childNodes[nodeIndex]);
     }
 
     for (
@@ -248,21 +260,20 @@ export default class VNode {
 
           try {
             if (childNode instanceof VClass) {
-              // childNode.nextIndex = newNodeIndex;
-              // childNode.nextNodeState = VNodeState.update;
-              // if (this.classState == VClassState.none) {
-              //   childNode.nextNodeState = VNodeState.insert;
-              // } else {
-              //   if (childNode.currentIndex != newNodeIndex) {
-              //     childNode.nextNodeState = VNodeState.update;
-              //   } else if (
-              //     !ToolKit.deepEqual(childNode.option, newNodeChildNode.option)
-              //   ) {
-              //     // childNode.attributes = newNodeChildNode.attributes;
-              //     childNode.setOption(newNodeChildNode.option);
-              //     childNode.nextNodeState = VNodeState.update;
-              //   }
-              // }
+              // 注意后面不能对比nextIndex，只能并且应该对比currentIndex
+              childNode.nextIndex = newNodeIndex;
+              if (childNode.classState == VClassState.none) {
+                childNode.nextNodeState = VNodeState.insert;
+              } else {
+                if (
+                  !ToolKit.deepEqual(childNode.option, newNodeChildNode.option)
+                ) {
+                  childNode.setOption(newNodeChildNode.option);
+                  childNode.nextNodeState = VNodeState.update;
+                } else {
+                  childNode.nextNodeState = VNodeState.none;
+                }
+              }
             } else {
               childNode.nextIndex = newNodeIndex;
               childNode.nextNodeState = VNodeState.update;
@@ -286,9 +297,14 @@ export default class VNode {
     this.childNodes = tempWillChildNodes;
 
     let tempMapNeedReleaseKeyArray = Object.keys(tempMapChildNodes);
-    for (let j = 0; j < tempMapNeedReleaseKeyArray.length; j++) {
+    for (let j = tempMapNeedReleaseKeyArray.length - 1; j >= 0; j--) {
       let mapKey = tempMapNeedReleaseKeyArray[j];
       let vnode1ChildNode = tempMapChildNodes[mapKey];
+      // tempOldChildNodesForIndexWithOutDelNode =
+      //   tempOldChildNodesForIndexWithOutDelNode.filter(
+      //     (node) => vnode1ChildNode !== node
+      //   );
+      tempOldChildNodesForIndexWithOutDelNode.splice(parseInt(mapKey), 1);
       if (vnode1ChildNode instanceof VClass) {
         if (vnode1ChildNode.option && vnode1ChildNode.option.ref) {
           vnode1ChildNode.option.ref(null);
@@ -301,6 +317,19 @@ export default class VNode {
       vnode1ChildNode.dispose(true);
     }
 
+    // 重排旧虚拟节点序号，虚拟节点序号是排除删除后的虚拟节点
+    for (
+      let oldNodeIndexWithOutDelNode = 0;
+      oldNodeIndexWithOutDelNode <
+      tempOldChildNodesForIndexWithOutDelNode.length;
+      oldNodeIndexWithOutDelNode++
+    ) {
+      tempOldChildNodesForIndexWithOutDelNode[
+        oldNodeIndexWithOutDelNode
+      ].currentIndex = oldNodeIndexWithOutDelNode;
+    }
+
+    tempOldChildNodesForIndexWithOutDelNode = null;
     tempMapChildNodes = null;
   }
 

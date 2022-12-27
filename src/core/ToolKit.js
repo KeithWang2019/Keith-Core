@@ -60,29 +60,37 @@ export default class ToolKit {
     return des;
   }
 
-  static isObject(obj) {
-    return typeof obj === "object" && obj !== null;
-  }
-
   static deepEqual(obj1, obj2) {
-    if (!ToolKit.isObject(obj1) || !ToolKit.isObject(obj2)) {
-      return obj1 === obj2;
-    }
-
-    if (obj1 === obj2) {
-      return true;
-    }
-
-    if (Object.keys(obj1).length !== Object.keys(obj2).length) {
+    let type1 = typeof obj1;
+    let type2 = typeof obj2;
+    if (type1 !== type2) {
       return false;
     }
 
-    for (let key in obj1) {
-      let res = ToolKit.deepEqual(obj1[key], obj2[key]);
-      if (!res) {
-        return false;
-      }
+    switch (type1) {
+      case "bigint":
+      case "boolean":
+      case "number":
+      case "string":
+      case "symbol":
+      case "undefined":
+        return obj1 === obj2;
+      case "function":
+        return true;
+      case "object":
+        if (Object.keys(obj1).length !== Object.keys(obj2).length) {
+          return false;
+        }
+
+        for (let key in obj1) {
+          let res = ToolKit.deepEqual(obj1[key], obj2[key]);
+          if (!res) {
+            return false;
+          }
+        }
+        break;
     }
+
     return true;
   }
 }
