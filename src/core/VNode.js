@@ -119,6 +119,7 @@ export default class VNode {
             this.el.addEventListener(key, this.eventListeners[key], false);
           });
         }
+
         if (this.childNodes && this.childNodes.length > 0) {
           // 记住，this.childNodes此时的顺序是最终的顺序，是正确的顺序
           let tempRefMapArray = {};
@@ -139,12 +140,16 @@ export default class VNode {
             });
           }
 
+          // tempSortIndexMapArray.sort((node1, node2) => {
+          //   return (
+          //     node1.nextIndex -
+          //     node1.currentIndex -
+          //     (node2.nextIndex - node2.currentIndex)
+          //   );
+          // });
+
           tempSortIndexMapArray.sort((node1, node2) => {
-            return (
-              node1.nextIndex -
-              node1.currentIndex -
-              (node2.nextIndex - node2.currentIndex)
-            );
+            return node1.nextIndex - node2.nextIndex;
           });
 
           for (
@@ -190,9 +195,17 @@ export default class VNode {
                 }
               }
             }
-            let fingerStirIndex = this.changePosition(childNode);
+
+            let fingerStirIndex = this.changePosition(
+              childNode,
+              childNode.nextNodeState
+            );
             if (fingerStirIndex != null) {
-              this.fingerStirPosition(this.childNodes, fingerStirIndex);
+              this.fingerStirPosition(
+                this.childNodes,
+                fingerStirIndex,
+                childNode.nextNodeState
+              );
             }
           }
 
@@ -230,9 +243,21 @@ export default class VNode {
     return null;
   }
 
-  fingerStirPosition(childNodes, fingerStirIndex) {
-    for (let i = fingerStirIndex + 1; i < childNodes.length; i++) {
-      childNodes[i].currentIndex = childNodes[i].currentIndex + 1;
+  fingerStirPosition(childNodes, fingerStirIndex, nextNodeState) {
+    let direction = 1;
+    if (nextNodeState == VNodeState.remove) {
+      direction = -1;
+    }
+
+    let foundFirst = false;
+    for (let i = 0; i < childNodes.length; i++) {
+      let node = childNodes[i];
+      if (!foundFirst && node.currentIndex >= fingerStirIndex) {
+        foundFirst = true;
+      }
+      if (foundFirst) {
+        node.currentIndex = node.currentIndex + direction;
+      }
     }
   }
 
@@ -322,12 +347,15 @@ export default class VNode {
       }
     }
 
-    this.childNodes = tempWillChildNodes;
-
     let tempMapNeedReleaseKeyArray = Object.keys(tempMapChildNodes);
+    tempMapNeedReleaseKeyArray.sort((key1, key2) => {
+      return key2 - key1;
+    });
+
     for (let j = 0; j < tempMapNeedReleaseKeyArray.length; j++) {
       let mapKey = tempMapNeedReleaseKeyArray[j];
       let vnode1ChildNode = tempMapChildNodes[mapKey];
+      vnode1ChildNode.nextNodeState = VNodeState.remove;
       if (vnode1ChildNode instanceof VClass) {
         if (vnode1ChildNode.option && vnode1ChildNode.option.ref) {
           vnode1ChildNode.option.ref(null);
@@ -337,8 +365,15 @@ export default class VNode {
           vnode1ChildNode.ref(null);
         }
       }
+      this.fingerStirPosition(
+        tempWillChildNodes,
+        vnode1ChildNode.currentIndex,
+        VNodeState.remove
+      );
       vnode1ChildNode.dispose(true);
     }
+
+    this.childNodes = tempWillChildNodes;
 
     tempMapChildNodes = null;
   }

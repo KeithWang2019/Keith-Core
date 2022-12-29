@@ -13,4 +13,9 @@ export default class VNodeState {
    * 更新
    */
   static update = "update";
+
+  /**
+   * 删除
+   */
+  static remove = "remove";
 }
