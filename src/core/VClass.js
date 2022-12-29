@@ -1,5 +1,6 @@
 import ToolKit from "./ToolKit";
 import VClassState from "./VClassState";
+import VNodePositionState from "./VNodePositionState";
 import VNodeState from "./VNodeState";
 
 export default class VClass {
@@ -21,9 +22,14 @@ export default class VClass {
   }
 
   /**
-   * 绘画状态
+   * 数据状态
    */
   nextNodeState = VNodeState.insert;
+
+  /**
+   * 位置状态
+   */
+  nextNodePositionState = VNodePositionState.insert;
 
   /**
    * 当前状态

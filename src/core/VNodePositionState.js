@@ -1,9 +1,4 @@
-export default class VNodeState {
-  /**
-   * 无变化
-   */
-  static none = "none";
-
+export default class VNodePositionState {
   /**
    * 插入
    */
@@ -13,4 +8,9 @@ export default class VNodeState {
    * 更新
    */
   static update = "update";
+
+  /**
+   * 删除
+   */
+  static remove = "remove";
 }
