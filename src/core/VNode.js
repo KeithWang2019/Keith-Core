@@ -133,7 +133,26 @@ export default class VNode {
             nodeIndex++
           ) {
             let childNode = this.childNodes[nodeIndex];
-            childNode.nextIndex = nodeIndex;
+            if (childNode.nextIndex == null) {
+              childNode.nextIndex = nodeIndex;
+            }
+            if (childNode.currentIndex == null) {
+              childNode.currentIndex = 2000000;
+            }
+          }
+
+          let sortChildNodes = this.childNodes.map((node) => node);
+
+          sortChildNodes.sort((node1, node2) => {
+            return Math.abs(node2.nextIndex - node2.currentIndex) - Math.abs(node1.nextIndex - node1.currentIndex);
+          });
+
+          for (
+            let nodeIndex = 0;
+            nodeIndex < sortChildNodes.length;
+            nodeIndex++
+          ) {
+            let childNode = sortChildNodes[nodeIndex];
 
             if (childNode instanceof VClass) {
               let instance = null;
@@ -231,7 +250,7 @@ export default class VNode {
     for (let i = 0; i < childNodes.length; i++) {
       let node = childNodes[i];
       if (node.currentIndex != null) {
-        if (node.currentIndex >= childNode.currentIndex) {
+        if (node.currentIndex >= childNode.nextIndex) {
           node.currentIndex++;
         }
       }
@@ -249,7 +268,7 @@ export default class VNode {
         if (range < 0) {
           // 向上移动
           if (
-            node.currentIndex > childNode.nextIndex &&
+            node.currentIndex >= childNode.nextIndex &&
             node.currentIndex < childNode.currentIndex
           ) {
             node.currentIndex++;
@@ -257,8 +276,8 @@ export default class VNode {
         } else {
           // 向下移动
           if (
-            node.currentIndex > childNode.currentIndex &&
-            node.currentIndex < childNode.nextIndex
+            node.currentIndex < childNode.nextIndex &&
+            node.currentIndex >= childNode.currentIndex
           ) {
             node.currentIndex--;
           }
