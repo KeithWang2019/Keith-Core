@@ -133,9 +133,7 @@ export default class VNode {
             nodeIndex++
           ) {
             let childNode = this.childNodes[nodeIndex];
-            // if (childNode.nextIndex == null) {
             childNode.nextIndex = nodeIndex;
-            // }
 
             if (childNode instanceof VClass) {
               let instance = null;
@@ -244,16 +242,12 @@ export default class VNode {
 
   updateRearrangement(childNodes, childNode) {
     let range = childNode.nextIndex - childNode.currentIndex;
-    if (range < 0) {
-      // 向上移动
-    } else {
-      // 向下移动
-    }
 
     for (let i = 0; i < childNodes.length; i++) {
       let node = childNodes[i];
       if (node.currentIndex != null && node !== childNode) {
         if (range < 0) {
+          // 向上移动
           if (
             node.currentIndex > childNode.nextIndex &&
             node.currentIndex < childNode.currentIndex
@@ -261,6 +255,7 @@ export default class VNode {
             node.currentIndex++;
           }
         } else {
+          // 向下移动
           if (
             node.currentIndex > childNode.currentIndex &&
             node.currentIndex < childNode.nextIndex
