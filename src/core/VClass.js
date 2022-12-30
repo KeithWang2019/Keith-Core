@@ -27,11 +27,6 @@ export default class VClass {
   nextNodeState = VNodeState.insert;
 
   /**
-   * 绘画状态
-   */
-  nextNodePositionState = VNodePositionState.insert;
-
-  /**
    * 当前状态
    */
   classState = VClassState.none;
