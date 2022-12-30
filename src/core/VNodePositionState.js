@@ -1,5 +1,10 @@
 export default class VNodePositionState {
   /**
+   * 删除
+   */
+  static remove = "remove";
+
+  /**
    * 插入
    */
   static insert = "insert";
@@ -8,9 +13,4 @@ export default class VNodePositionState {
    * 更新
    */
   static update = "update";
-
-  /**
-   * 删除
-   */
-  static remove = "remove";
 }

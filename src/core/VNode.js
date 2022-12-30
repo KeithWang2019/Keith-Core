@@ -29,7 +29,7 @@ export default class VNode {
   nextNodeState = VNodeState.insert;
 
   /**
-   * 位置状态
+   * 绘画状态
    */
   nextNodePositionState = VNodePositionState.insert;
 
@@ -141,10 +141,6 @@ export default class VNode {
             if (childNode.nextIndex == null) {
               childNode.nextIndex = nodeIndex;
             }
-            // if (childNode.nextNodePositionState == VNodePositionState.insert) {
-            //   childNode.nextIndex = nodeIndex;
-            //   childNode.currentIndex = nodeIndex;
-            // }
 
             if (childNode instanceof VClass) {
               let instance = null;
@@ -221,28 +217,46 @@ export default class VNode {
         elParent.appendChild(currentChildNodeEl);
       }
 
+      let result = {
+        nextIndex: childNode.nextIndex,
+        currentIndex: childNode.currentIndex,
+      };
       childNode.currentIndex = childNode.nextIndex;
-      return childNode.currentIndex;
+      return result;
     }
     return null;
   }
 
-  fingerStirPosition(childNodes, fingerStirIndex, nextNodeState) {
-    let direction = 1;
-    if (nextNodeState == VNodePositionState.remove) {
-      direction = -1;
-    } else if (nextNodeState == VNodePositionState.update) {
-      return;
-    }
-
-    let foundFirst = false;
-    for (let i = 0; i < childNodes.length; i++) {
-      let node = childNodes[i];
-      if (!foundFirst && node.currentIndex > fingerStirIndex) {
-        foundFirst = true;
+  fingerStirPosition(childNodes, fingerStirIndex, nextNodePositionState) {
+    if (nextNodePositionState == VNodePositionState.update) {
+      let range = fingerStirIndex.range;
+      if (range > 0) {
+        debugger;
+      } else {
+        for (
+          let i = fingerStirIndex.id + 1;
+          i <= fingerStirIndex.id + -range;
+          i++
+        ) {
+          let node = childNodes[i];
+          node.currentIndex = node.currentIndex + 1;
+        }
       }
-      if (foundFirst) {
-        node.currentIndex = node.currentIndex + direction;
+    } else {
+      let direction = 0;
+      let startIndex = 0;
+      if (nextNodePositionState == VNodePositionState.remove) {
+        direction = -1;
+        startIndex = fingerStirIndex.nextIndex;
+      } else if (nextNodePositionState == VNodePositionState.insert) {
+        direction = 1;
+        startIndex = fingerStirIndex.nextIndex + 1;
+      }
+      for (let i = startIndex; i < childNodes.length; i++) {
+        let node = childNodes[i];
+        if (node.currentIndex) {
+          node.currentIndex = node.currentIndex + direction;
+        }
       }
     }
   }
@@ -318,11 +332,11 @@ export default class VNode {
               childNode.nextNodeState = VNodeState.update;
               childNode.diff(newNodeChildNode);
             }
+            childNode.nextNodePositionState = VNodePositionState.update;
           } catch (e) {
             debugger;
           }
 
-          childNode.nextNodePositionState = VNodePositionState.update;
           break;
         }
       }
@@ -337,9 +351,9 @@ export default class VNode {
 
     // 需要倒序删除，好重排递减
     let tempMapNeedReleaseKeyArray = Object.keys(tempMapChildNodes);
-    tempMapNeedReleaseKeyArray.sort((key1, key2) => {
-      return key2 - key1;
-    });
+    // tempMapNeedReleaseKeyArray.sort((key1, key2) => {
+    //   return key2 - key1;
+    // });
 
     for (let j = 0; j < tempMapNeedReleaseKeyArray.length; j++) {
       let mapKey = tempMapNeedReleaseKeyArray[j];
@@ -356,7 +370,10 @@ export default class VNode {
       // 重排递减
       this.fingerStirPosition(
         tempWillChildNodes,
-        vnode1ChildNode.currentIndex,
+        {
+          nextIndex: vnode1ChildNode.currentIndex,
+          currentIndex: vnode1ChildNode.currentIndex,
+        },
         VNodePositionState.remove
       );
       vnode1ChildNode.dispose(true);
