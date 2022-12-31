@@ -19,6 +19,9 @@ export default class VClass {
   }
 
   getCurrentIndex() {
+    if (this.instance == null) {
+      return null;
+    }
     let el = this.instance.__vnode.el;
     let parentNode = this.instance.__vnode.el.parentNode;
     if (parentNode == null) {
