@@ -16,11 +16,25 @@ export default class VNode {
   value = null;
   key = null;
   ref = null;
-  currentIndex = null;
   nextIndex = null;
 
   getKey() {
     return this.key;
+  }
+
+  getCurrentIndex() {
+    let el = this.el;
+    let parentNode = this.el.parentNode;
+    if (parentNode == null) {
+      return null;
+    }
+    let childNodes = parentNode.childNodes;
+    for (let i = 0; i < childNodes.length; i++) {
+      if (childNodes[i] == el) {
+        return i;
+      }
+    }
+    return null;
   }
 
   /**
@@ -133,26 +147,15 @@ export default class VNode {
             nodeIndex++
           ) {
             let childNode = this.childNodes[nodeIndex];
-            if (childNode.nextIndex == null) {
-              childNode.nextIndex = nodeIndex;
-            }
-            if (childNode.currentIndex == null) {
-              childNode.currentIndex = 2000000;
-            }
+            childNode.nextIndex = nodeIndex;
           }
-
-          let sortChildNodes = this.childNodes.map((node) => node);
-
-          sortChildNodes.sort((node1, node2) => {
-            return Math.abs(node2.nextIndex - node2.currentIndex) - Math.abs(node1.nextIndex - node1.currentIndex);
-          });
 
           for (
             let nodeIndex = 0;
-            nodeIndex < sortChildNodes.length;
+            nodeIndex < this.childNodes.length;
             nodeIndex++
           ) {
-            let childNode = sortChildNodes[nodeIndex];
+            let childNode = this.childNodes[nodeIndex];
 
             if (childNode instanceof VClass) {
               let instance = null;
@@ -188,11 +191,11 @@ export default class VNode {
 
             try {
               if (this.changePosition(this.el, childNode)) {
-                if (childNode.nextNodeState == VNodePositionState.insert) {
-                  this.insertRearrangement(this.childNodes, childNode);
-                } else {
-                  this.updateRearrangement(this.childNodes, childNode);
-                }
+                // if (childNode.nextNodeState == VNodePositionState.insert) {
+                //   this.insertRearrangement(this.childNodes, childNode);
+                // } else {
+                //   this.updateRearrangement(this.childNodes, childNode);
+                // }
               }
             } catch (ex) {
               debugger;
@@ -213,7 +216,7 @@ export default class VNode {
   }
 
   changePosition(elParent, childNode) {
-    if (childNode.currentIndex != childNode.nextIndex) {
+    if (childNode.getCurrentIndex() != childNode.nextIndex) {
       let currentChildNodeEl = null;
       if (childNode.instance) {
         currentChildNodeEl = childNode.instance.__vnode.el;
@@ -232,61 +235,6 @@ export default class VNode {
     return false;
   }
 
-  removeRearrangement(childNodes, childNode) {
-    for (let i = 0; i < childNodes.length; i++) {
-      let node = childNodes[i];
-      if (node.currentIndex != null) {
-        if (node.currentIndex >= childNode.currentIndex) {
-          node.currentIndex--;
-        }
-      }
-    }
-  }
-
-  insertRearrangement(childNodes, childNode) {
-    // childNode.currentIndex = childNode.nextIndex;
-    childNode.currentIndex = null;
-
-    for (let i = 0; i < childNodes.length; i++) {
-      let node = childNodes[i];
-      if (node.currentIndex != null) {
-        if (node.currentIndex >= childNode.nextIndex) {
-          node.currentIndex++;
-        }
-      }
-    }
-
-    childNode.currentIndex = childNode.nextIndex;
-  }
-
-  updateRearrangement(childNodes, childNode) {
-    let range = childNode.nextIndex - childNode.currentIndex;
-
-    for (let i = 0; i < childNodes.length; i++) {
-      let node = childNodes[i];
-      if (node.currentIndex != null && node !== childNode) {
-        if (range < 0) {
-          // 向上移动
-          if (
-            node.currentIndex >= childNode.nextIndex &&
-            node.currentIndex < childNode.currentIndex
-          ) {
-            node.currentIndex++;
-          }
-        } else {
-          // 向下移动
-          if (
-            node.currentIndex < childNode.nextIndex &&
-            node.currentIndex >= childNode.currentIndex
-          ) {
-            node.currentIndex--;
-          }
-        }
-      }
-    }
-    childNode.currentIndex = childNode.nextIndex;
-  }
-
   async diff(newNode) {
     if (this.childNodes == null) {
       this.childNodes = [];
@@ -301,7 +249,6 @@ export default class VNode {
     for (let nodeIndex = 0; nodeIndex < this.childNodes.length; nodeIndex++) {
       let node = this.childNodes[nodeIndex];
       tempMapChildNodes[nodeIndex] = node;
-      node.currentIndex = nodeIndex;
     }
 
     for (
@@ -340,7 +287,6 @@ export default class VNode {
           try {
             if (childNode instanceof VClass) {
               // 注意后面不能对比nextIndex，只能并且应该对比currentIndex
-              childNode.nextIndex = newNodeIndex;
               if (childNode.classState == VClassState.none) {
                 childNode.nextNodeState = VNodeState.update;
               } else {
@@ -354,7 +300,6 @@ export default class VNode {
                 }
               }
             } else {
-              childNode.nextIndex = newNodeIndex;
               childNode.nextNodeState = VNodeState.update;
               childNode.diff(newNodeChildNode);
             }
@@ -367,7 +312,6 @@ export default class VNode {
       }
 
       if (!found) {
-        newNodeChildNode.nextIndex = newNodeIndex;
         newNodeChildNode.nextNodeState = VNodeState.insert;
         tempWillChildNodes.push(newNodeChildNode);
       }
@@ -375,9 +319,6 @@ export default class VNode {
 
     // 需要倒序删除，好重排递减
     let tempMapNeedReleaseKeyArray = Object.keys(tempMapChildNodes);
-    tempMapNeedReleaseKeyArray.sort((key1, key2) => {
-      return key2 - key1;
-    });
 
     for (let j = 0; j < tempMapNeedReleaseKeyArray.length; j++) {
       let mapKey = tempMapNeedReleaseKeyArray[j];
@@ -391,8 +332,6 @@ export default class VNode {
           vnode1ChildNode.ref(null);
         }
       }
-      // 重排递减
-      this.removeRearrangement(tempWillChildNodes, vnode1ChildNode);
       vnode1ChildNode.dispose(true);
     }
 

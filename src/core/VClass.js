@@ -9,14 +9,26 @@ export default class VClass {
   option = null;
   instance = null;
 
-  // 使用option的key
-  // key = null;
-  currentIndex = null;
   nextIndex = null;
 
   getKey() {
     if (this.option) {
       return this.option.key;
+    }
+    return null;
+  }
+
+  getCurrentIndex() {
+    let el = this.instance.__vnode.el;
+    let parentNode = this.instance.__vnode.el.parentNode;
+    if (parentNode == null) {
+      return null;
+    }
+    let childNodes = parentNode.childNodes;
+    for (let i = 0; i < childNodes.length; i++) {
+      if (childNodes[i] === el) {
+        return i;
+      }
     }
     return null;
   }
