@@ -178,6 +178,7 @@ export default class VNode {
             let maxAbsRange = -1;
             let maxRange = -1;
             let needHandleNode = tempOtherChildNodes[0];
+            let needHandleNodeIndex = 0;
 
             for (let j = 0; j < tempOtherChildNodes.length; j++) {
               let childNode = tempOtherChildNodes[j];
@@ -189,13 +190,12 @@ export default class VNode {
                   maxRange = range;
                   maxAbsRange = absRange;
                   needHandleNode = childNode;
+                  needHandleNodeIndex = j;
                 }
               }
             }
 
-            tempOtherChildNodes = tempOtherChildNodes.filter(
-              (node) => node !== needHandleNode
-            );
+            tempOtherChildNodes.splice(needHandleNodeIndex,1);
 
             await this.runNode(
               needHandleNode,
