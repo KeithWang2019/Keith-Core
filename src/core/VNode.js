@@ -1,7 +1,6 @@
 import ToolKit from "./ToolKit";
 import VClass from "./VClass";
 import VClassState from "./VClassState";
-import VNodePositionState from "./VNodePositionState";
 import VNodeState from "./VNodeState";
 
 export default class VNode {
@@ -141,9 +140,24 @@ export default class VNode {
 
         // 入口
         if (this.childNodes && this.childNodes.length > 0) {
+          let tempKeyArray = [];
           for (let i = 0; i < this.childNodes.length; i++) {
-            this.childNodes[i].nextIndex = i;
+            let childNode = this.childNodes[i];
+            if (childNode) {
+              // 此处整理最后的下标，也就是节点所在位置
+              childNode.nextIndex = i;
+              // 以下是为了检测异常
+              let key = childNode.getKey();
+              if (key != null) {
+                if (tempKeyArray.includes(childNode.getKey())) {
+                  throw `[key重复]${parentView}>${childNode.tagName}[key:${key}]`;
+                } else {
+                  tempKeyArray.push(key);
+                }
+              }
+            }
           }
+          tempKeyArray = null;
 
           let tempRefMapArray = {};
           let tempRefMapFunction = {};
@@ -195,7 +209,7 @@ export default class VNode {
               }
             }
 
-            tempOtherChildNodes.splice(needHandleNodeIndex,1);
+            tempOtherChildNodes.splice(needHandleNodeIndex, 1);
 
             await this.runNode(
               needHandleNode,
@@ -276,7 +290,6 @@ export default class VNode {
       if (newPlaceChildNodeEl) {
         elParent.insertBefore(currentChildNodeEl, newPlaceChildNodeEl);
       } else {
-        // debugger;
         elParent.appendChild(currentChildNodeEl);
       }
       return true;
@@ -389,11 +402,11 @@ export default class VNode {
     tempMapChildNodes = null;
   }
 
-  dispose(delEl) {
+  async dispose(delEl) {
     if (this.childNodes) {
       for (let i = 0; i < this.childNodes.length; i++) {
         let childNode = this.childNodes[i];
-        childNode.dispose(delEl);
+        await childNode.dispose(delEl);
       }
     }
     if (this.attributes) {

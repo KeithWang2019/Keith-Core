@@ -29,7 +29,6 @@ export default class View {
     await this.onPreRender();
 
     let vnode = await this.render();
-    console.log(parentView + ">" + this.__name);
     if (typeof containerId == "string") {
       document
         .getElementById(containerId)
@@ -39,7 +38,7 @@ export default class View {
     }
     // 渲染完成前已被释放
     if (this.#disposed) {
-      this.__dispose();
+      await this.__dispose();
     }
 
     this.__vnode = vnode;
@@ -52,12 +51,9 @@ export default class View {
    */
   async __refresh(parentView) {
     await this.onPreRender();
-
     let willVNode = await this.render();
     await this.__vnode.diff(willVNode);
     this.__vnode.nextNodeState = VNodeState.update;
-    console.log(parentView + ">" + this.__name);
-
     await this.__vnode.draw(parentView + ">" + this.__name);
   }
 
@@ -76,14 +72,20 @@ export default class View {
    */
   async onPreRender() {}
 
+  /**
+   * 释放之前
+   */
+  async onPreDispose() {}
+
   getJson() {
     throw `${this.__name}未定义getJson方法`;
   }
 
-  __dispose() {
+  async __dispose() {
     this.#disposed = true;
+    await this.onPreDispose();
     if (this.__vnode) {
-      this.__vnode.dispose(true);
+      await this.__vnode.dispose(true);
       this.__vnode = null;
     }
     if (this.__events) {

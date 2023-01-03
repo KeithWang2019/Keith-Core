@@ -1,6 +1,5 @@
 import ToolKit from "./ToolKit";
 import VClassState from "./VClassState";
-import VNodePositionState from "./VNodePositionState";
 import VNodeState from "./VNodeState";
 
 export default class VClass {
@@ -61,7 +60,7 @@ export default class VClass {
       this.instance = new this.viewClass(this.option);
       this.instance.__name = this.tagName;
       if (parentView.indexOf(">" + this.tagName) >= 0) {
-        throw this.tagName + "代码中存在循环嵌套";
+        throw "[代码中存在循环嵌套]" + this.tagName;
       }
       await this.instance.__render(containerId, parentView);
       this.#disposalData();
@@ -87,9 +86,9 @@ export default class VClass {
     // }
   }
 
-  dispose() {
+  async dispose() {
     if (this.instance) {
-      this.instance.__dispose();
+      await this.instance.__dispose();
       this.instance = null;
 
       this.viewClass = null;
