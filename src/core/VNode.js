@@ -16,11 +16,28 @@ export default class VNode {
   value = null;
   key = null;
   ref = null;
-  currentIndex = null;
   nextIndex = null;
 
   getKey() {
     return this.key;
+  }
+
+  getCurrentIndex() {
+    let el = this.el;
+    if (el == null) {
+      return null;
+    }
+    let parentNode = this.el.parentNode;
+    if (parentNode == null) {
+      return null;
+    }
+    let childNodes = parentNode.childNodes;
+    for (let i = 0; i < childNodes.length; i++) {
+      if (childNodes[i] == el) {
+        return i;
+      }
+    }
+    return null;
   }
 
   /**
@@ -122,81 +139,71 @@ export default class VNode {
           });
         }
 
+        // 入口
         if (this.childNodes && this.childNodes.length > 0) {
-          // 记住，this.childNodes此时的顺序是最终的顺序，是正确的顺序
+          for (let i = 0; i < this.childNodes.length; i++) {
+            this.childNodes[i].nextIndex = i;
+          }
+
           let tempRefMapArray = {};
           let tempRefMapFunction = {};
 
-          for (
-            let nodeIndex = 0;
-            nodeIndex < this.childNodes.length;
-            nodeIndex++
-          ) {
-            let childNode = this.childNodes[nodeIndex];
-            if (childNode.nextIndex == null) {
-              childNode.nextIndex = nodeIndex;
-            }
-            if (childNode.currentIndex == null) {
-              childNode.currentIndex = 2000000;
+          // let tempChildNodes = this.childNodes.map((node) => node);
+
+          // 先处理插入
+          let tempInsertChildNodes = [];
+          let tempOtherChildNodes = [];
+
+          for (let i = 0; i < this.childNodes.length; i++) {
+            let childNode = this.childNodes[i];
+            if (childNode.nextNodeState == VNodeState.insert) {
+              tempInsertChildNodes.push(childNode);
+            } else {
+              tempOtherChildNodes.push(childNode);
             }
           }
 
-          let sortChildNodes = this.childNodes.map((node) => node);
+          for (let i = 0; i < tempInsertChildNodes.length; i++) {
+            await this.runNode(
+              tempInsertChildNodes[i],
+              parentView,
+              tempRefMapArray,
+              tempRefMapFunction
+            );
+          }
 
-          sortChildNodes.sort((node1, node2) => {
-            return Math.abs(node2.nextIndex - node2.currentIndex) - Math.abs(node1.nextIndex - node1.currentIndex);
-          });
+          let tempOtherChildNodeLength = tempOtherChildNodes.length;
 
-          for (
-            let nodeIndex = 0;
-            nodeIndex < sortChildNodes.length;
-            nodeIndex++
-          ) {
-            let childNode = sortChildNodes[nodeIndex];
+          for (let i = 0; i < tempOtherChildNodeLength; i++) {
+            let maxAbsRange = -1;
+            let maxRange = -1;
+            let needHandleNode = tempOtherChildNodes[0];
+            let needHandleNodeIndex = 0;
 
-            if (childNode instanceof VClass) {
-              let instance = null;
-
-              if (childNode.nextNodeState == VNodeState.none) {
-              } else {
-                if (childNode.classState == VClassState.none) {
-                  instance = await childNode.init(this.el, parentView);
-                } else {
-                  instance = await childNode.update(parentView);
-                }
-                if (childNode.option && childNode.option.ref) {
-                  if (!tempRefMapArray[childNode.option.ref]) {
-                    tempRefMapArray[childNode.option.ref] = [instance];
-                    tempRefMapFunction[childNode.option.ref] =
-                      childNode.option.ref;
-                  } else {
-                    tempRefMapArray[childNode.option.ref].push(instance);
-                  }
-                }
-              }
-            } else {
-              await childNode.draw(parentView);
-              if (childNode.ref) {
-                if (!tempRefMapArray[childNode.ref]) {
-                  tempRefMapArray[childNode.ref] = [childNode.el];
-                  tempRefMapFunction[childNode.ref] = childNode.ref;
-                } else {
-                  tempRefMapArray[childNode.ref].push(childNode.el);
+            for (let j = 0; j < tempOtherChildNodes.length; j++) {
+              let childNode = tempOtherChildNodes[j];
+              let currentIndex = childNode.getCurrentIndex();
+              if (currentIndex != null) {
+                let range = childNode.nextIndex - currentIndex;
+                let absRange = Math.abs(range);
+                if (absRange > maxAbsRange) {
+                  maxRange = range;
+                  maxAbsRange = absRange;
+                  needHandleNode = childNode;
+                  needHandleNodeIndex = j;
                 }
               }
             }
 
-            try {
-              if (this.changePosition(this.el, childNode)) {
-                if (childNode.nextNodeState == VNodePositionState.insert) {
-                  this.insertRearrangement(this.childNodes, childNode);
-                } else {
-                  this.updateRearrangement(this.childNodes, childNode);
-                }
-              }
-            } catch (ex) {
-              debugger;
-            }
+            tempOtherChildNodes.splice(needHandleNodeIndex,1);
+
+            await this.runNode(
+              needHandleNode,
+              parentView,
+              tempRefMapArray,
+              tempRefMapFunction,
+              maxRange
+            );
           }
 
           Object.keys(tempRefMapArray).forEach((key) => {
@@ -205,6 +212,8 @@ export default class VNode {
           tempRefMapArray = null;
           tempRefMapFunction = null;
         }
+        //
+
         break;
     }
     this.nextNodeState = VNodeState.none;
@@ -212,15 +221,58 @@ export default class VNode {
     return this.el;
   }
 
-  changePosition(elParent, childNode) {
-    if (childNode.currentIndex != childNode.nextIndex) {
+  async runNode(childNode, parentView, refMapArray, refMapFunction, range) {
+    if (childNode instanceof VClass) {
+      let instance = null;
+
+      if (childNode.nextNodeState == VNodeState.none) {
+      } else {
+        if (childNode.classState == VClassState.none) {
+          instance = await childNode.init(this.el, parentView);
+        } else {
+          instance = await childNode.update(parentView);
+        }
+        if (childNode.option && childNode.option.ref) {
+          if (!refMapArray[childNode.option.ref]) {
+            refMapArray[childNode.option.ref] = [instance];
+            refMapFunction[childNode.option.ref] = childNode.option.ref;
+          } else {
+            refMapArray[childNode.option.ref].push(instance);
+          }
+        }
+      }
+    } else {
+      await childNode.draw(parentView);
+      if (childNode.ref) {
+        if (!refMapArray[childNode.ref]) {
+          refMapArray[childNode.ref] = [childNode.el];
+          refMapFunction[childNode.ref] = childNode.ref;
+        } else {
+          refMapArray[childNode.ref].push(childNode.el);
+        }
+      }
+    }
+
+    try {
+      this.changePosition(this.el, childNode, range);
+    } catch (ex) {
+      debugger;
+    }
+  }
+
+  changePosition(elParent, childNode, range) {
+    if (childNode.getCurrentIndex() != childNode.nextIndex) {
       let currentChildNodeEl = null;
       if (childNode.instance) {
         currentChildNodeEl = childNode.instance.__vnode.el;
       } else {
         currentChildNodeEl = childNode.el;
       }
-      let newPlaceChildNodeEl = elParent.childNodes[childNode.nextIndex];
+      let startIndex = childNode.nextIndex;
+      if (range > 0) {
+        startIndex++;
+      }
+      let newPlaceChildNodeEl = elParent.childNodes[startIndex];
       if (newPlaceChildNodeEl) {
         elParent.insertBefore(currentChildNodeEl, newPlaceChildNodeEl);
       } else {
@@ -230,61 +282,6 @@ export default class VNode {
       return true;
     }
     return false;
-  }
-
-  removeRearrangement(childNodes, childNode) {
-    for (let i = 0; i < childNodes.length; i++) {
-      let node = childNodes[i];
-      if (node.currentIndex != null) {
-        if (node.currentIndex >= childNode.currentIndex) {
-          node.currentIndex--;
-        }
-      }
-    }
-  }
-
-  insertRearrangement(childNodes, childNode) {
-    // childNode.currentIndex = childNode.nextIndex;
-    childNode.currentIndex = null;
-
-    for (let i = 0; i < childNodes.length; i++) {
-      let node = childNodes[i];
-      if (node.currentIndex != null) {
-        if (node.currentIndex >= childNode.nextIndex) {
-          node.currentIndex++;
-        }
-      }
-    }
-
-    childNode.currentIndex = childNode.nextIndex;
-  }
-
-  updateRearrangement(childNodes, childNode) {
-    let range = childNode.nextIndex - childNode.currentIndex;
-
-    for (let i = 0; i < childNodes.length; i++) {
-      let node = childNodes[i];
-      if (node.currentIndex != null && node !== childNode) {
-        if (range < 0) {
-          // 向上移动
-          if (
-            node.currentIndex >= childNode.nextIndex &&
-            node.currentIndex < childNode.currentIndex
-          ) {
-            node.currentIndex++;
-          }
-        } else {
-          // 向下移动
-          if (
-            node.currentIndex < childNode.nextIndex &&
-            node.currentIndex >= childNode.currentIndex
-          ) {
-            node.currentIndex--;
-          }
-        }
-      }
-    }
-    childNode.currentIndex = childNode.nextIndex;
   }
 
   async diff(newNode) {
@@ -301,7 +298,6 @@ export default class VNode {
     for (let nodeIndex = 0; nodeIndex < this.childNodes.length; nodeIndex++) {
       let node = this.childNodes[nodeIndex];
       tempMapChildNodes[nodeIndex] = node;
-      node.currentIndex = nodeIndex;
     }
 
     for (
@@ -340,7 +336,6 @@ export default class VNode {
           try {
             if (childNode instanceof VClass) {
               // 注意后面不能对比nextIndex，只能并且应该对比currentIndex
-              childNode.nextIndex = newNodeIndex;
               if (childNode.classState == VClassState.none) {
                 childNode.nextNodeState = VNodeState.update;
               } else {
@@ -354,7 +349,6 @@ export default class VNode {
                 }
               }
             } else {
-              childNode.nextIndex = newNodeIndex;
               childNode.nextNodeState = VNodeState.update;
               childNode.diff(newNodeChildNode);
             }
@@ -367,7 +361,6 @@ export default class VNode {
       }
 
       if (!found) {
-        newNodeChildNode.nextIndex = newNodeIndex;
         newNodeChildNode.nextNodeState = VNodeState.insert;
         tempWillChildNodes.push(newNodeChildNode);
       }
@@ -375,9 +368,6 @@ export default class VNode {
 
     // 需要倒序删除，好重排递减
     let tempMapNeedReleaseKeyArray = Object.keys(tempMapChildNodes);
-    tempMapNeedReleaseKeyArray.sort((key1, key2) => {
-      return key2 - key1;
-    });
 
     for (let j = 0; j < tempMapNeedReleaseKeyArray.length; j++) {
       let mapKey = tempMapNeedReleaseKeyArray[j];
@@ -391,8 +381,6 @@ export default class VNode {
           vnode1ChildNode.ref(null);
         }
       }
-      // 重排递减
-      this.removeRearrangement(tempWillChildNodes, vnode1ChildNode);
       vnode1ChildNode.dispose(true);
     }
 
