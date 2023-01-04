@@ -261,19 +261,20 @@ export default class VNode {
       let instance = null;
 
       if (childNode.nextNodeState == VNodeState.none) {
+        instance = childNode.instance;
       } else {
         if (childNode.classState == VClassState.none) {
           instance = await childNode.init(this.el, parentView);
         } else {
           instance = await childNode.update(parentView);
         }
-        if (childNode.option && childNode.option.ref) {
-          if (!refMapArray[childNode.option.ref]) {
-            refMapArray[childNode.option.ref] = [instance];
-            refMapFunction[childNode.option.ref] = childNode.option.ref;
-          } else {
-            refMapArray[childNode.option.ref].push(instance);
-          }
+      }
+      if (childNode.option && childNode.option.ref) {
+        if (!refMapArray[childNode.option.ref]) {
+          refMapArray[childNode.option.ref] = [instance];
+          refMapFunction[childNode.option.ref] = childNode.option.ref;
+        } else {
+          refMapArray[childNode.option.ref].push(instance);
         }
       }
     } else {
