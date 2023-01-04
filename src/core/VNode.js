@@ -1,7 +1,6 @@
 import ToolKit from "./ToolKit";
 import VClass from "./VClass";
 import VClassState from "./VClassState";
-import VNodePositionState from "./VNodePositionState";
 import VNodeState from "./VNodeState";
 
 export default class VNode {
@@ -139,21 +138,33 @@ export default class VNode {
           });
         }
 
-        // 入口
         if (this.childNodes && this.childNodes.length > 0) {
+          let tempKeyArray = [];
           for (let i = 0; i < this.childNodes.length; i++) {
-            this.childNodes[i].nextIndex = i;
+            let childNode = this.childNodes[i];
+            if (childNode) {
+              // 此处整理最后的下标，也就是节点所在位置
+              childNode.nextIndex = i;
+              // 以下是为了检测异常
+              let key = childNode.getKey();
+              if (key != null) {
+                if (tempKeyArray.includes(childNode.getKey())) {
+                  throw `[key重复]${parentView}>${childNode.tagName}[key:${key}]`;
+                } else {
+                  tempKeyArray.push(key);
+                }
+              }
+            }
           }
+          tempKeyArray = null;
 
           let tempRefMapArray = {};
           let tempRefMapFunction = {};
 
-          // let tempChildNodes = this.childNodes.map((node) => node);
-
-          // 先处理插入
           let tempInsertChildNodes = [];
           let tempOtherChildNodes = [];
 
+          // 区分插入和更新
           for (let i = 0; i < this.childNodes.length; i++) {
             let childNode = this.childNodes[i];
             if (childNode.nextNodeState == VNodeState.insert) {
@@ -163,23 +174,15 @@ export default class VNode {
             }
           }
 
-          for (let i = 0; i < tempInsertChildNodes.length; i++) {
-            await this.runNode(
-              tempInsertChildNodes[i],
-              parentView,
-              tempRefMapArray,
-              tempRefMapFunction
-            );
-          }
-
+          // 处理上下移动的过程
           let tempOtherChildNodeLength = tempOtherChildNodes.length;
-
           for (let i = 0; i < tempOtherChildNodeLength; i++) {
             let maxAbsRange = -1;
             let maxRange = -1;
             let needHandleNode = tempOtherChildNodes[0];
             let needHandleNodeIndex = 0;
 
+            // 优先处理步长最大的变换
             for (let j = 0; j < tempOtherChildNodes.length; j++) {
               let childNode = tempOtherChildNodes[j];
               let currentIndex = childNode.getCurrentIndex();
@@ -195,8 +198,30 @@ export default class VNode {
               }
             }
 
-            tempOtherChildNodes.splice(needHandleNodeIndex,1);
+            // 在处理上下移动时，如果移动后的位置之前，存在一个或多个需要插入的节点，此时先不要处理移动，先处理移动后的位置之前的，一个或多个插入的节点
+            // 再处理移动节点
+            let insertChildNodeIndexs = [];
+            for (let j = 0; j < tempInsertChildNodes.length; j++) {
+              let insertChildNode = tempInsertChildNodes[j];
+              if (insertChildNode.nextIndex < needHandleNode.nextIndex) {
+                // 处理插入
+                await this.runNode(
+                  insertChildNode,
+                  parentView,
+                  tempRefMapArray,
+                  tempRefMapFunction
+                );
+                insertChildNodeIndexs.push(j);
+              }
+            }
+            // 从数组移除已处理的插入节点
+            insertChildNodeIndexs.forEach((insertChildNodeIndex) => {
+              tempInsertChildNodes.splice(insertChildNodeIndex, 1);
+            });
+            // 从数组移除已处理的移动节点
+            tempOtherChildNodes.splice(needHandleNodeIndex, 1);
 
+            // 处理移动
             await this.runNode(
               needHandleNode,
               parentView,
@@ -206,13 +231,23 @@ export default class VNode {
             );
           }
 
+          // 处理剩下的未插入的节点
+          for (let i = 0; i < tempInsertChildNodes.length; i++) {
+            // 处理插入
+            await this.runNode(
+              tempInsertChildNodes[i],
+              parentView,
+              tempRefMapArray,
+              tempRefMapFunction
+            );
+          }
+
           Object.keys(tempRefMapArray).forEach((key) => {
             tempRefMapFunction[key](tempRefMapArray[key]);
           });
           tempRefMapArray = null;
           tempRefMapFunction = null;
         }
-        //
 
         break;
     }
@@ -276,7 +311,6 @@ export default class VNode {
       if (newPlaceChildNodeEl) {
         elParent.insertBefore(currentChildNodeEl, newPlaceChildNodeEl);
       } else {
-        // debugger;
         elParent.appendChild(currentChildNodeEl);
       }
       return true;
@@ -389,11 +423,11 @@ export default class VNode {
     tempMapChildNodes = null;
   }
 
-  dispose(delEl) {
+  async dispose(delEl) {
     if (this.childNodes) {
       for (let i = 0; i < this.childNodes.length; i++) {
         let childNode = this.childNodes[i];
-        childNode.dispose(delEl);
+        await childNode.dispose(delEl);
       }
     }
     if (this.attributes) {

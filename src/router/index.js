@@ -93,7 +93,7 @@ export default class Router {
       route.component().then(async (component) => {
         if (renderVersion == this.#renderVersion) {
           let viewClass = component.default ? component.default : component;
-          route.__instanceVClass = new VClass(viewClass);          
+          route.__instanceVClass = new VClass(viewClass);
           await route.__instanceVClass.init(route.containerId, "");
           y();
         }
@@ -102,8 +102,14 @@ export default class Router {
   }
 
   #disposeRoute(route) {
-    if (route.__instanceVClass != null) {
-      route.__instanceVClass.dispose();
-    }
+    return new Promise((y, n) => {
+      if (route.__instanceVClass != null) {
+        route.__instanceVClass.dispose().then(() => {
+          y();
+        });
+      } else {
+        y();
+      }
+    });
   }
 }
