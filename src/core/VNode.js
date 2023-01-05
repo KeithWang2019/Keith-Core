@@ -384,6 +384,9 @@ export default class VNode {
                 }
               }
             } else {
+              if (newNodeChildNode.className) {
+                childNode.setClass(newNodeChildNode.className);
+              }
               childNode.nextNodeState = VNodeState.update;
               childNode.diff(newNodeChildNode);
             }

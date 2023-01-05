@@ -35,7 +35,7 @@ export default class Router {
   async #lookHash() {
     for (let i = 0; i < this.currentRouteList.length; i++) {
       let oldRoute = this.currentRouteList[i];
-      this.#disposeRoute(oldRoute);
+      await this.#disposeRoute(oldRoute);
     }
     this.currentRouteList = [];
 
