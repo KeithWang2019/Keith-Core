@@ -55,14 +55,14 @@ export default class VClass {
     this.option = option;
   }
 
-  async init(containerId, parentView) {
+  async init(container, parentView) {
     if (this.classState == VClassState.none) {
       this.instance = new this.viewClass(this.option);
       this.instance.__name = this.tagName;
       if (parentView.indexOf(">" + this.tagName) >= 0) {
         throw "[代码中存在循环嵌套]" + this.tagName;
       }
-      await this.instance.__render(containerId, parentView);
+      await this.instance.__render(container, parentView);
       this.#disposalData();
       this.classState = VClassState.init;
       return this.instance;

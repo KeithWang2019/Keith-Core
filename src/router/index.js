@@ -19,10 +19,16 @@ export default class Router {
    */
   currentRouteList = [];
 
+  containerId = null;
+
   constructor(option) {
     this.#option = option;
     this.#bingEvent();
-    this.#lookHash();
+  }
+
+  async init({ containerId }) {
+    this.containerId = containerId;
+    await this.#lookHash();
   }
 
   #bingEvent() {
@@ -94,8 +100,16 @@ export default class Router {
         if (renderVersion == this.#renderVersion) {
           let viewClass = component.default ? component.default : component;
           route.__instanceVClass = new VClass(viewClass);
-          await route.__instanceVClass.init(route.containerId, "");
-          y();
+
+          let path = this.containerId;
+          if (route.containerId) {
+            path += " " + route.containerId;
+          }
+          let routeContainer = document.querySelector(path);
+          if (routeContainer) {
+            await route.__instanceVClass.init(routeContainer, "");
+            y();
+          }
         }
       });
     });

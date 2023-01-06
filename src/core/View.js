@@ -25,17 +25,10 @@ export default class View {
    * @param {*} parentView
    * @returns
    */
-  async __render(containerId, parentView) {
+  async __render(container, parentView) {
     await this.onPreRender();
-
     let vnode = await this.render();
-    if (typeof containerId == "string") {
-      document
-        .getElementById(containerId)
-        .appendChild(await vnode.draw(parentView + ">" + this.__name));
-    } else {
-      containerId.appendChild(await vnode.draw(parentView + ">" + this.__name));
-    }
+    container.appendChild(await vnode.draw(parentView + ">" + this.__name));
     // 渲染完成前已被释放
     if (this.#disposed) {
       await this.__dispose();
