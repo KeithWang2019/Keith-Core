@@ -16,7 +16,7 @@ export default class App {
 
       for (let i = 0; i < this.plugins.length; i++) {
         let plugin = this.plugins[i];
-        await plugin.init({ containerId });
+        await plugin.init({ containerId, app: this });
       }
 
       return this.instance;

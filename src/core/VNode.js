@@ -91,7 +91,7 @@ export default class VNode {
     this.childNodes.push(childVNode);
   }
 
-  async draw(parentView) {
+  async draw(parentView, app) {
     switch (this.tagName) {
       case "#text":
         if (this.nextNodeState == VNodeState.insert) {
@@ -208,6 +208,7 @@ export default class VNode {
                 await this.runNode(
                   insertChildNode,
                   parentView,
+                  app,
                   tempRefMapArray,
                   tempRefMapFunction
                 );
@@ -225,6 +226,7 @@ export default class VNode {
             await this.runNode(
               needHandleNode,
               parentView,
+              app,
               tempRefMapArray,
               tempRefMapFunction,
               maxRange
@@ -237,6 +239,7 @@ export default class VNode {
             await this.runNode(
               tempInsertChildNodes[i],
               parentView,
+              app,
               tempRefMapArray,
               tempRefMapFunction
             );
@@ -256,7 +259,14 @@ export default class VNode {
     return this.el;
   }
 
-  async runNode(childNode, parentView, refMapArray, refMapFunction, range) {
+  async runNode(
+    childNode,
+    parentView,
+    app,
+    refMapArray,
+    refMapFunction,
+    range
+  ) {
     if (childNode instanceof VClass) {
       let instance = null;
 
@@ -264,9 +274,9 @@ export default class VNode {
         instance = childNode.instance;
       } else {
         if (childNode.classState == VClassState.none) {
-          instance = await childNode.init(this.el, parentView);
+          instance = await childNode.init(this.el, parentView, app);
         } else {
-          instance = await childNode.update(parentView);
+          instance = await childNode.update(parentView, app);
         }
       }
       if (childNode.option && childNode.option.ref) {
@@ -278,7 +288,7 @@ export default class VNode {
         }
       }
     } else {
-      await childNode.draw(parentView);
+      await childNode.draw(parentView, app);
       if (childNode.ref) {
         if (!refMapArray[childNode.ref]) {
           refMapArray[childNode.ref] = [childNode.el];

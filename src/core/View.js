@@ -7,6 +7,7 @@ export default class View {
   __vnode = null;
   __events = null;
   __name = null;
+  $app = null;
 
   constructor(option) {
     this.setOption(option);
@@ -25,10 +26,13 @@ export default class View {
    * @param {*} parentView
    * @returns
    */
-  async __render(container, parentView) {
+  async __render(container, parentView, app) {
+    this.$app = app;
     await this.onPreRender();
     let vnode = await this.render();
-    container.appendChild(await vnode.draw(parentView + ">" + this.__name));
+    container.appendChild(
+      await vnode.draw(parentView + ">" + this.__name, app)
+    );
     // 渲染完成前已被释放
     if (this.#disposed) {
       await this.__dispose();
@@ -42,12 +46,12 @@ export default class View {
    * 刷新渲染
    * @param {*} parentView
    */
-  async __refresh(parentView) {
+  async __refresh(parentView, app) {
     await this.onPreRender();
     let willVNode = await this.render();
     await this.__vnode.diff(willVNode);
     this.__vnode.nextNodeState = VNodeState.update;
-    await this.__vnode.draw(parentView + ">" + this.__name);
+    await this.__vnode.draw(parentView + ">" + this.__name, app);
   }
 
   $emit(eventName, val) {
@@ -57,7 +61,7 @@ export default class View {
   }
 
   async update() {
-    await this.__refresh("");
+    await this.__refresh("", this.$app);
   }
 
   /**

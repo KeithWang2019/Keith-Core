@@ -20,14 +20,16 @@ export default class Router {
   currentRouteList = [];
 
   containerId = null;
+  app = null;
 
   constructor(option) {
     this.#option = option;
     this.#bingEvent();
   }
 
-  async init({ containerId }) {
+  async init({ containerId, app }) {
     this.containerId = containerId;
+    this.app = app;
     await this.#lookHash();
   }
 
@@ -45,18 +47,18 @@ export default class Router {
     }
     this.currentRouteList = [];
 
-    let hash = document.location.hash.toLowerCase();
+    let hash = document.location.hash.substring(1);
 
     let urlArray = hash.split("/");
     let urlParent = "#";
     let routeUrlArray = [];
-    if (hash == "#/" || hash == "") {
-      routeUrlArray.push("/");
-    }
+    routeUrlArray.push("#/");
     for (let i = 1; i < urlArray.length; i++) {
       let currentUrl = urlParent + "/" + urlArray[i];
-      routeUrlArray.push(currentUrl);
-      urlParent = currentUrl;
+      if (!routeUrlArray.includes(currentUrl)) {
+        routeUrlArray.push(currentUrl);
+        urlParent = currentUrl;
+      }
     }
 
     for (let i = 0; i < routeUrlArray.length; i++) {
@@ -65,10 +67,7 @@ export default class Router {
       let sameLevelCount = 0;
       for (let j = 0; j < routeCount; j++) {
         let currentRoute = this.#option.routes[j];
-        if (
-          currentRoute.path.toLowerCase() == currentUrl ||
-          (currentUrl == "/" && currentRoute.default)
-        ) {
+        if ("#" + currentRoute.path == currentUrl) {
           sameLevelCount++;
           currentRoute.__instanceVClass = null;
           this.currentRouteList.push(currentRoute);
@@ -107,7 +106,7 @@ export default class Router {
           }
           let routeContainer = document.querySelector(path);
           if (routeContainer) {
-            await route.__instanceVClass.init(routeContainer, "");
+            await route.__instanceVClass.init(routeContainer, "", this.app);
             y();
           }
         }

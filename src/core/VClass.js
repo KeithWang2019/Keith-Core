@@ -55,14 +55,14 @@ export default class VClass {
     this.option = option;
   }
 
-  async init(container, parentView) {
+  async init(container, parentView, app) {
     if (this.classState == VClassState.none) {
       this.instance = new this.viewClass(this.option);
       this.instance.__name = this.tagName;
       if (parentView.indexOf(">" + this.tagName) >= 0) {
         throw "[代码中存在循环嵌套]" + this.tagName;
       }
-      await this.instance.__render(container, parentView);
+      await this.instance.__render(container, parentView, app);
       this.#disposalData();
       this.classState = VClassState.init;
       return this.instance;
@@ -70,10 +70,10 @@ export default class VClass {
     return null;
   }
 
-  async update(parentView) {
+  async update(parentView, app) {
     if (this.classState == VClassState.init) {
       this.instance.setOption(this.option);
-      await this.instance.__refresh(parentView);
+      await this.instance.__refresh(parentView, app);
       this.#disposalData();
       return this.instance;
     }
