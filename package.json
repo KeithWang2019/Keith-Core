@@ -10,8 +10,9 @@
   ],
   "main": "src/index.js",
   "files": [
-    "src"
+    "src"    
   ],
+  "typings": "src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KeithWang2019/Keith-Core.git"

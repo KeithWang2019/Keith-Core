@@ -1,7 +1,8 @@
+import Plugin from "../core/Plugin";
 import ToolKit from "../core/ToolKit";
 import VClass from "../core/VClass";
 
-export default class Router {
+export default class Router extends Plugin {
   #option = {
     routes: [
       //   {
@@ -23,6 +24,8 @@ export default class Router {
   app = null;
 
   constructor(option) {
+    super("Router");
+
     this.#option = option;
     this.#bingEvent();
   }
@@ -41,12 +44,6 @@ export default class Router {
   }
 
   async #lookHash() {
-    for (let i = 0; i < this.currentRouteList.length; i++) {
-      let oldRoute = this.currentRouteList[i];
-      await this.#disposeRoute(oldRoute);
-    }
-    this.currentRouteList = [];
-
     let hash = document.location.hash.substring(1);
 
     let urlArray = hash.split("/");
@@ -61,36 +58,37 @@ export default class Router {
       }
     }
 
+    let tempCurrentRouteList = [];
+
+    for (let i = 0; i < this.currentRouteList.length; i++) {
+      let oldRoute = this.currentRouteList[i];
+      if (!routeUrlArray.includes("#" + oldRoute.path)) {
+        await this.#disposeRoute(oldRoute);
+      } else {
+        tempCurrentRouteList.push(oldRoute);
+      }
+    }
+    this.currentRouteList = [];
+
     for (let i = 0; i < routeUrlArray.length; i++) {
       let currentUrl = routeUrlArray[i];
       let routeCount = this.#option.routes.length;
       let sameLevelCount = 0;
       for (let j = 0; j < routeCount; j++) {
         let currentRoute = this.#option.routes[j];
-        if ("#" + currentRoute.path == currentUrl) {
+        if (
+          "#" + currentRoute.path == currentUrl &&
+          tempCurrentRouteList.findIndex(
+            (route) => route.path == currentRoute.path
+          ) < 0
+        ) {
           sameLevelCount++;
           currentRoute.__instanceVClass = null;
           this.currentRouteList.push(currentRoute);
-          this.#loadRoute(currentRoute, this.#renderVersion).then(() => {
-            sameLevelCount--;
-          });
+          await this.#loadRoute(currentRoute, this.#renderVersion);
         }
-      }
-      while (1) {
-        if (sameLevelCount == 0) {
-          break;
-        }
-        await this.#nextTick();
       }
     }
-  }
-
-  #nextTick() {
-    return new Promise((y, n) => {
-      requestAnimationFrame(() => {
-        y();
-      });
-    });
   }
 
   #loadRoute(route, renderVersion) {
@@ -108,6 +106,8 @@ export default class Router {
           if (routeContainer) {
             await route.__instanceVClass.init(routeContainer, "", this.app);
             y();
+          } else {
+            throw `[router路径未找到]${path}`;
           }
         }
       });
@@ -124,5 +124,15 @@ export default class Router {
         y();
       }
     });
+  }
+
+  push({ state, url }) {
+    window.history.pushState(state, null, "/#" + url);
+    this.#lookHash();
+  }
+
+  replace({ state, url }) {
+    window.history.replaceState(state, null, "/#" + url);
+    this.#lookHash();
   }
 }

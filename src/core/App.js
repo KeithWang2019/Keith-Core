@@ -1,22 +1,25 @@
+import AppProxyHandler from "./AppProxyHandler";
 import VClassState from "./VClassState";
 
 export default class App {
   /**
    * 当前状态
    */
-  classState = VClassState.none;
+  #classState = VClassState.none;
 
-  plugins = [];
+  __plugins = {};
 
   constructor() {}
 
   async init(containerId) {
-    if (this.classState == VClassState.none) {
-      this.classState = VClassState.init;
+    if (this.#classState == VClassState.none) {
+      this.#classState = VClassState.init;
 
-      for (let i = 0; i < this.plugins.length; i++) {
-        let plugin = this.plugins[i];
-        await plugin.init({ containerId, app: this });
+      for (let name in this.__plugins) {
+        await this.__plugins[name].init({
+          containerId,
+          app: new Proxy(this, AppProxyHandler),
+        });
       }
 
       return this.instance;
@@ -25,6 +28,6 @@ export default class App {
   }
 
   use(plugin) {
-    this.plugins.push(plugin);
+    this.__plugins[plugin.name] = plugin;
   }
 }

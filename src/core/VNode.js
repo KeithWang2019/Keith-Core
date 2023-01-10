@@ -302,7 +302,8 @@ export default class VNode {
     try {
       this.changePosition(this.el, childNode, range);
     } catch (ex) {
-      debugger;
+      // debugger;
+      console.log(ex);
     }
   }
 
@@ -438,12 +439,12 @@ export default class VNode {
   }
 
   async dispose(delEl) {
-    if (this.childNodes) {
-      for (let i = 0; i < this.childNodes.length; i++) {
-        let childNode = this.childNodes[i];
-        await childNode.dispose(delEl);
-      }
-    }
+    // if (this.childNodes) {
+    //   for (let i = 0; i < this.childNodes.length; i++) {
+    //     let childNode = this.childNodes[i];
+    //     await childNode.dispose(delEl);
+    //   }
+    // }
     if (this.attributes) {
       Object.keys(this.attributes).forEach((key) => {
         this.el.setAttribute(key, null);
@@ -462,7 +463,7 @@ export default class VNode {
       });
     }
 
-    if (delEl) {
+    if (delEl && this.el) {
       this.el.parentNode.removeChild(this.el);
     }
 
