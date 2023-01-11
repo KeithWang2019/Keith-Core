@@ -439,32 +439,35 @@ export default class VNode {
   }
 
   async dispose(delEl) {
-    // if (this.childNodes) {
-    //   for (let i = 0; i < this.childNodes.length; i++) {
-    //     let childNode = this.childNodes[i];
-    //     await childNode.dispose(delEl);
-    //   }
-    // }
-    if (this.attributes) {
-      Object.keys(this.attributes).forEach((key) => {
-        this.el.setAttribute(key, null);
-        this.el.removeAttribute(key);
-      });
+    // 理论上只有首个节点需要删除dom，
+    if (this.childNodes) {
+      for (let i = 0; i < this.childNodes.length; i++) {
+        let childNode = this.childNodes[i];
+        await childNode.dispose(false);
+      }
     }
-    if (this.style) {
-      Object.keys(this.style).forEach((key) => {
-        this.el.style[key] = null;
-      });
-    }
+    if (delEl) {
+      if (this.attributes) {
+        Object.keys(this.attributes).forEach((key) => {
+          this.el.setAttribute(key, null);
+          this.el.removeAttribute(key);
+        });
+      }
+      if (this.style) {
+        Object.keys(this.style).forEach((key) => {
+          this.el.style[key] = null;
+        });
+      }
 
-    if (this.eventListeners) {
-      Object.keys(this.eventListeners).forEach((key) => {
-        this.el.removeEventListener(key, this.eventListeners[key], false);
-      });
-    }
+      if (this.eventListeners) {
+        Object.keys(this.eventListeners).forEach((key) => {
+          this.el.removeEventListener(key, this.eventListeners[key], false);
+        });
+      }
 
-    if (delEl && this.el) {
-      this.el.parentNode.removeChild(this.el);
+      if (this.el) {
+        this.el.parentNode.removeChild(this.el);
+      }
     }
 
     this.tagName = null;

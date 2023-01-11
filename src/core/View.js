@@ -60,8 +60,10 @@ export default class View {
     }
   }
 
-  async update() {
-    await this.__refresh("", this.$app);
+  update() {
+    ToolKit.callContinuousQueue(async () => {
+      await this.__refresh("", this.$app);
+    });
   }
 
   /**

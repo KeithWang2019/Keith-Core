@@ -14,7 +14,6 @@ export default class Router extends Plugin {
     ],
   };
 
-  #renderVersion = 0;
   /**
    * 当前路由
    */
@@ -33,13 +32,16 @@ export default class Router extends Plugin {
   async init({ containerId, app }) {
     this.containerId = containerId;
     this.app = app;
-    await this.#lookHash();
+    ToolKit.callContinuousQueue(async () => {
+      await this.#lookHash();
+    });
   }
 
   #bingEvent() {
     window.addEventListener("popstate", (event) => {
-      this.#renderVersion++;
-      this.#lookHash();
+      ToolKit.callContinuousQueue(async () => {
+        await this.#lookHash();
+      });
     });
   }
 
@@ -73,42 +75,40 @@ export default class Router extends Plugin {
     for (let i = 0; i < routeUrlArray.length; i++) {
       let currentUrl = routeUrlArray[i];
       let routeCount = this.#option.routes.length;
-      let sameLevelCount = 0;
       for (let j = 0; j < routeCount; j++) {
         let currentRoute = this.#option.routes[j];
-        if (
-          "#" + currentRoute.path == currentUrl &&
-          tempCurrentRouteList.findIndex(
-            (route) => route.path == currentRoute.path
-          ) < 0
-        ) {
-          sameLevelCount++;
-          currentRoute.__instanceVClass = null;
+        if ("#" + currentRoute.path == currentUrl) {
+          if (
+            tempCurrentRouteList.findIndex(
+              (route) => route.path == currentRoute.path
+            ) < 0
+          ) {
+            currentRoute.__instanceVClass = null;
+            await this.#loadRoute(currentRoute);
+          }
+
           this.currentRouteList.push(currentRoute);
-          await this.#loadRoute(currentRoute, this.#renderVersion);
         }
       }
     }
   }
 
-  #loadRoute(route, renderVersion) {
+  #loadRoute(route) {
     return new Promise((y, n) => {
       route.component().then(async (component) => {
-        if (renderVersion == this.#renderVersion) {
-          let viewClass = component.default ? component.default : component;
-          route.__instanceVClass = new VClass(viewClass);
+        let viewClass = component.default ? component.default : component;
+        route.__instanceVClass = new VClass(viewClass);
 
-          let path = this.containerId;
-          if (route.containerId) {
-            path += " " + route.containerId;
-          }
-          let routeContainer = document.querySelector(path);
-          if (routeContainer) {
-            await route.__instanceVClass.init(routeContainer, "", this.app);
-            y();
-          } else {
-            throw `[router路径未找到]${path}`;
-          }
+        let path = this.containerId;
+        if (route.containerId) {
+          path += " " + route.containerId;
+        }
+        let routeContainer = document.querySelector(path);
+        if (routeContainer) {
+          await route.__instanceVClass.init(routeContainer, "", this.app);
+          y();
+        } else {
+          throw `[router路径未找到]${path}`;
         }
       });
     });
@@ -127,12 +127,16 @@ export default class Router extends Plugin {
   }
 
   push({ state, url }) {
-    window.history.pushState(state, null, "/#" + url);
-    this.#lookHash();
+    ToolKit.callContinuousQueue(async () => {
+      window.history.pushState(state, null, "/#" + url);
+      await this.#lookHash();
+    });
   }
 
   replace({ state, url }) {
-    window.history.replaceState(state, null, "/#" + url);
-    this.#lookHash();
+    ToolKit.callContinuousQueue(async () => {
+      window.history.replaceState(state, null, "/#" + url);
+      await this.#lookHash();
+    });
   }
 }

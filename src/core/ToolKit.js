@@ -93,4 +93,22 @@ export default class ToolKit {
 
     return true;
   }
+
+  static continuousQueue = [];
+  static continuousQueueExecuting = false;
+  static callContinuousQueue(callback) {
+    ToolKit.continuousQueue.push(callback);
+    ToolKit.executeContinuousQueue();
+  }
+
+  static async executeContinuousQueue() {
+    if (!ToolKit.continuousQueueExecuting) {
+      ToolKit.continuousQueueExecuting = true;
+      while (ToolKit.continuousQueue.length > 0) {
+        let callback = ToolKit.continuousQueue.shift();
+        await callback();
+      }
+      ToolKit.continuousQueueExecuting = false;
+    }
+  }
 }
