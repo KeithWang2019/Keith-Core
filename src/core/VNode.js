@@ -100,6 +100,11 @@ export default class VNode {
           this.el.data = this.value;
         }
         break;
+      // case "frameElement":
+      //   if (this.nextNodeState == VNodeState.insert) {
+      //     this.el = document.createDocumentFragment();
+      //   }
+      //   break;
       default:
         if (this.nextNodeState == VNodeState.insert) {
           this.el = document.createElement(this.tagName);
@@ -215,10 +220,10 @@ export default class VNode {
                 insertChildNodeIndexs.push(j);
               }
             }
-            // 从数组移除已处理的插入节点
-            insertChildNodeIndexs.forEach((insertChildNodeIndex) => {
-              tempInsertChildNodes.splice(insertChildNodeIndex, 1);
-            });
+            // 从数组移除已处理的插入节点,倒叙删除避免顺序混乱
+            for (let j = insertChildNodeIndexs.length - 1; j >= 0; j--) {
+              tempInsertChildNodes.splice(insertChildNodeIndexs[j], 1);
+            }
             // 从数组移除已处理的移动节点
             tempOtherChildNodes.splice(needHandleNodeIndex, 1);
 

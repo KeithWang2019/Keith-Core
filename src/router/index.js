@@ -104,7 +104,7 @@ export default class Router extends Plugin {
           path += " " + route.containerId;
         }
         let routeContainer = document.querySelector(path);
-        if (routeContainer) {
+        if (routeContainer) {          
           await route.__instanceVClass.init(routeContainer, "", this.app);
           y();
         } else {
