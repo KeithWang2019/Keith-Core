@@ -430,7 +430,7 @@ export default class VNode {
           vnode1ChildNode.ref(null);
         }
       }
-      vnode1ChildNode.dispose(true);
+      await vnode1ChildNode.dispose(true);
     }
 
     this.childNodes = tempWillChildNodes;
