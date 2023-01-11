@@ -1,6 +1,6 @@
 {
   "name": "@keithwang/keith-core",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "",
   "keywords": [
     "plugin-transform-react-jsx",
