@@ -124,7 +124,9 @@ export default class VNode {
                 _class = val;
                 break;
               default:
-                this.el.setAttribute(key, val);
+                if (this.el.getAttribute(key) != val) {
+                  this.el.setAttribute(key, val);
+                }
                 break;
             }
           });
@@ -141,10 +143,14 @@ export default class VNode {
         }
         if (this.style) {
           if (typeof this.style === "string") {
-            this.el.setAttribute("style", this.style);
+            if (this.el.getAttribute("style") != this.style) {
+              this.el.setAttribute("style", this.style);
+            }
           } else {
             Object.keys(this.style).forEach((key) => {
-              this.el.style[key] = this.style[key];
+              if (this.el.style[key] != this.style[key]) {
+                this.el.style[key] = this.style[key];
+              }
             });
           }
         }

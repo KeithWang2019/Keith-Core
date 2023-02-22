@@ -1,5 +1,3 @@
-import VNode from "./VNode";
-
 export default class ToolKit {
   constructor() {
     throw "ToolKit should not constructor.";
@@ -110,5 +108,54 @@ export default class ToolKit {
       }
       ToolKit.continuousQueueExecuting = false;
     }
+  }
+
+  static linkUrls = {};
+
+  static requireJSAndCss(urls) {
+    return new Promise((y, n) => {
+      let allCount = 0;
+      for (let i = 0; i < urls.length; i++) {
+        let url = urls[i];
+        if (url.indexOf(".js") > 0) {
+          if (!ToolKit.linkUrls[url]) {
+            var scriptLink = document.createElement("script");
+            scriptLink.src = url;
+            scriptLink.addEventListener("load", () => {
+              allCount++;
+              ToolKit.linkUrls[url] = true;
+              if (allCount == urls.length) {
+                allCount = 0;
+                y();
+              }
+            });
+            document.head.appendChild(scriptLink);
+          } else {
+            allCount++;
+          }
+        } else if (url.indexOf(".css") > 0) {
+          if (!ToolKit.linkUrls[url]) {
+            var cssLink = document.createElement("link");
+            cssLink.href = url;
+            cssLink.rel = "stylesheet";
+            cssLink.addEventListener("load", () => {
+              allCount++;
+              ToolKit.linkUrls[url] = true;
+              if (allCount == urls.length) {
+                allCount = 0;
+                y();
+              }
+            });
+            document.head.appendChild(cssLink);
+          } else {
+            allCount++;
+          }
+        }
+      }
+      if (allCount == urls.length) {
+        allCount = 0;
+        y();
+      }
+    });
   }
 }

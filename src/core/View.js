@@ -37,7 +37,9 @@ export default class View {
     if (this.#disposed) {
       await this.__dispose();
     }
-
+    else{
+      await this.onPostRender();
+    }    
     this.__vnode = vnode;
     return vnode;
   }
@@ -52,6 +54,7 @@ export default class View {
     await this.__vnode.diff(willVNode);
     this.__vnode.nextNodeState = VNodeState.update;
     await this.__vnode.draw(parentView + ">" + this.__name, app);
+    await this.onPostRender();
   }
 
   $emit(eventName, val) {
@@ -81,6 +84,11 @@ export default class View {
    * 渲染之前
    */
   async onPreRender() {}
+
+  /**
+   * 渲染之后
+   */
+  async onPostRender() {}
 
   /**
    * 释放之前
