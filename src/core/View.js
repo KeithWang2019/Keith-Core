@@ -60,9 +60,20 @@ export default class View {
     }
   }
 
-  update() {
+  update(callback, delayTime) {
     ToolKit.callContinuousQueue(async () => {
       await this.__refresh("", this.$app);
+      if (callback) {
+        if (delayTime) {
+          setTimeout(() => {
+            callback();
+          }, delayTime);
+        } else {
+          requestAnimationFrame(() => {
+            callback();
+          });
+        }
+      }
     });
   }
 

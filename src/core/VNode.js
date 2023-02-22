@@ -10,7 +10,7 @@ export default class VNode {
   childNodes = null;
   attributes = null;
   eventListeners = null;
-  className = null;
+  className = "";
   style = null;
   value = null;
   key = null;
@@ -63,6 +63,7 @@ export default class VNode {
   }
 
   setClass(className) {
+    this.className = "";
     if (typeof className === "string") {
       this.className = className;
     } else {
@@ -97,18 +98,16 @@ export default class VNode {
         if (this.nextNodeState == VNodeState.insert) {
           this.el = document.createTextNode(this.value);
         } else {
-          this.el.data = this.value;
+          if (this.el.data != this.value) {
+            this.el.data = this.value;
+          }
         }
         break;
-      // case "frameElement":
-      //   if (this.nextNodeState == VNodeState.insert) {
-      //     this.el = document.createDocumentFragment();
-      //   }
-      //   break;
       default:
         if (this.nextNodeState == VNodeState.insert) {
           this.el = document.createElement(this.tagName);
         }
+        let _class = "";
         if (this.attributes) {
           Object.keys(this.attributes).forEach((key) => {
             let val = this.attributes[key];
@@ -117,7 +116,12 @@ export default class VNode {
                 if (val === null) {
                   val = "";
                 }
-                this.el.value = val;
+                if (this.el.value != val) {
+                  this.el.value = val;
+                }
+                break;
+              case "class":
+                _class = val;
                 break;
               default:
                 this.el.setAttribute(key, val);
@@ -125,8 +129,15 @@ export default class VNode {
             }
           });
         }
+        let allClassNameString = "";
+        if (_class) {
+          allClassNameString += _class;
+        }
         if (this.className) {
-          this.el.className = this.className;
+          allClassNameString += " " + this.className;
+        }
+        if (this.el.className != allClassNameString) {
+          this.el.className = allClassNameString;
         }
         if (this.style) {
           if (typeof this.style === "string") {
@@ -400,9 +411,7 @@ export default class VNode {
                 }
               }
             } else {
-              if (newNodeChildNode.className) {
-                childNode.setClass(newNodeChildNode.className);
-              }
+              childNode.setClass(newNodeChildNode.className);
               childNode.nextNodeState = VNodeState.update;
               childNode.diff(newNodeChildNode);
             }
