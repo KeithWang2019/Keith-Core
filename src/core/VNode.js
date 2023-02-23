@@ -81,6 +81,10 @@ export default class VNode {
     this.style = style;
   }
 
+  setAttributes(attributes) {
+    this.attributes = attributes;
+  }
+
   setRef(ref) {
     this.ref = ref;
   }
@@ -418,6 +422,8 @@ export default class VNode {
               }
             } else {
               childNode.setClass(newNodeChildNode.className);
+              childNode.setStyle(newNodeChildNode.style);
+              childNode.setAttributes(newNodeChildNode.attributes);
               childNode.nextNodeState = VNodeState.update;
               childNode.diff(newNodeChildNode);
             }
