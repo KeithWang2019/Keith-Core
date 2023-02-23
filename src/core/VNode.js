@@ -160,7 +160,15 @@ export default class VNode {
         }
         if (this.eventListeners) {
           Object.keys(this.eventListeners).forEach((key) => {
-            this.el.addEventListener(key, this.eventListeners[key], false);
+            if (key.indexOf("capture") >= 0) {
+              this.el.addEventListener(
+                key.replace("capture", ""),
+                this.eventListeners[key],
+                true
+              );
+            } else {
+              this.el.addEventListener(key, this.eventListeners[key], false);
+            }
           });
         }
 
