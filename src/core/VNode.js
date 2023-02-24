@@ -499,8 +499,19 @@ export default class VNode {
 
       if (this.eventListeners) {
         Object.keys(this.eventListeners).forEach((key) => {
-          this.el.removeEventListener(key, this.eventListeners[key], false);
-          this.el.removeEventListener(key, this.eventListeners[key], true);
+          if (key.indexOf("capture") >= 0) {
+            this.el.removeEventListener(
+              key.replace("capture", ""),
+              this.eventListeners[key],
+              { capture: true, passive: false, once: false }
+            );
+          } else {
+            this.el.removeEventListener(key, this.eventListeners[key], {
+              capture: false,
+              passive: false,
+              once: false,
+            });
+          }
         });
       }
 
