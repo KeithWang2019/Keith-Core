@@ -158,4 +158,18 @@ export default class ToolKit {
       }
     });
   }
+
+  static delayRunHashTalbe = {};
+
+  static delayRun(id, millisecond) {
+    return new Promise((y, n) => {
+      if (ToolKit.delayRunHashTalbe[id]) {
+        clearTimeout(this.delayRunHashTalbe[id]);
+        ToolKit.delayRunHashTalbe[id] = null;
+      }
+      ToolKit.delayRunHashTalbe[id] = setTimeout(() => {
+        y();
+      }, millisecond);
+    });
+  }
 }
