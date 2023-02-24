@@ -11,13 +11,13 @@ export default class App {
 
   constructor() {}
 
-  async init(containerId) {
+  async init(containerAppId) {
     if (this.#classState == VClassState.none) {
       this.#classState = VClassState.init;
 
       for (let name in this.__plugins) {
         await this.__plugins[name].init({
-          containerId,
+          containerAppId,
           app: new Proxy(this, AppProxyHandler),
         });
       }

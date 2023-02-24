@@ -1,6 +1,7 @@
 import Plugin from "../core/Plugin";
 import ToolKit from "../core/ToolKit";
 import VClass from "../core/VClass";
+import View from "../core/View";
 
 export default class Router extends Plugin {
   #option = {
@@ -19,7 +20,7 @@ export default class Router extends Plugin {
    */
   currentRouteList = [];
 
-  containerId = null;
+  containerAppId = null;
   app = null;
 
   constructor(option) {
@@ -29,8 +30,8 @@ export default class Router extends Plugin {
     this.#bingEvent();
   }
 
-  async init({ containerId, app }) {
-    this.containerId = containerId;
+  async init({ containerAppId, app }) {
+    this.containerAppId = containerAppId;
     this.app = app;
     ToolKit.callContinuousQueue(async () => {
       await this.#lookHash();
@@ -93,25 +94,35 @@ export default class Router extends Plugin {
     }
   }
 
-  #loadRoute(route) {
+  #findInitViewClass(containerRouteId, viewClass) {
     return new Promise((y, n) => {
-      route.component().then(async (component) => {
-        let viewClass = component.default ? component.default : component;
-        route.__instanceVClass = new VClass(viewClass);
+      let instanceVClass = new VClass(viewClass);
 
-        let path = this.containerId;
-        if (route.containerId) {
-          path += " " + route.containerId;
-        }
-        let routeContainer = document.querySelector(path);
-        if (routeContainer) {          
-          await route.__instanceVClass.init(routeContainer, "", this.app);
+      let path = this.containerAppId;
+      if (containerRouteId) {
+        path += " " + containerRouteId;
+      }
+      let routeContainer = document.querySelector(path);
+      if (routeContainer) {
+        instanceVClass.init(routeContainer, "", this.app).then(() => {
           y();
-        } else {
-          throw `[router路径未找到]${path}`;
-        }
-      });
+        });
+      } else {
+        throw `[router路径未找到]${path}`;
+      }
     });
+  }
+
+  #loadRoute(route) {
+    if (route.component.prototype instanceof View) {
+      let viewClass = route.component;
+      return this.#findInitViewClass(route.containerId, viewClass);
+    } else {
+      return route.component().then((component) => {
+        let viewClass = component.default ? component.default : component;
+        return this.#findInitViewClass(route.containerId, viewClass);
+      });
+    }
   }
 
   #disposeRoute(route) {
