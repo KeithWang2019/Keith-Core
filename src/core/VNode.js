@@ -164,10 +164,14 @@ export default class VNode {
               this.el.addEventListener(
                 key.replace("capture", ""),
                 this.eventListeners[key],
-                true
+                { capture: true, passive: false, once: false }
               );
             } else {
-              this.el.addEventListener(key, this.eventListeners[key], false);
+              this.el.addEventListener(key, this.eventListeners[key], {
+                capture: false,
+                passive: false,
+                once: false,
+              });
             }
           });
         }
@@ -496,6 +500,7 @@ export default class VNode {
       if (this.eventListeners) {
         Object.keys(this.eventListeners).forEach((key) => {
           this.el.removeEventListener(key, this.eventListeners[key], false);
+          this.el.removeEventListener(key, this.eventListeners[key], true);
         });
       }
 
